@@ -1,26 +1,48 @@
-// ============================================================
-//  FIREBASE CONFIG  —  EDIT THIS ONE BLOCK ONLY
-// ============================================================
-// Paste the config object Firebase gives you (Step 3 of SETUP_GUIDE.txt)
-// between the { } below. Nothing else in any file needs changing.
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - 269-ARD Live Crew Dashboard</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <div class="login-card">
+            <h2>269-ARD Dashboard</h2>
+            <p class="login-subtitle">Sign in to access the crew board</p>
+            <div id="error-msg" class="error-msg" style="display:none; color: #ff5555; margin-bottom: 1rem;"></div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Enter your password">
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%; margin-top:1rem;">Sign In</button>
+            </form>
+        </div>
+    </div>
+    <script type="module">
+        import { auth } from "./js/firebase.js";
+        import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyB5JCbADIpgJguCplwBrAXWraNsbEiRxFw",
-  authDomain: "live-crew-dashboard.firebaseapp.com",
-  projectId: "live-crew-dashboard",
-  storageBucket: "live-crew-dashboard.firebasestorage.app",
-  messagingSenderId: "824823126792",
-  appId: "1:824823126792:web:261bf7cc54089ec7f66abd",
-  measurementId: "G-EWXKKQ477B"
-};
-
-// ------------------------------------------------------------
-// Do not edit below this line.
-// ------------------------------------------------------------
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errEl = document.getElementById('error-msg');
+            errEl.style.display = 'none';
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                window.location.href = 'index.html';
+            } catch (err) {
+                errEl.textContent = err.message;
+                errEl.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
