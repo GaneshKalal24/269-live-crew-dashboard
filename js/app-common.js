@@ -11,7 +11,7 @@ export function pad(n){ return String(n).padStart(2,"0"); }
 export function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
 
 // ---- AUTH ----
-// Roles live in Firestore: /users/{uid} = { email, role: "editor" | "viewer" }
+// Roles live in Firestore: /users/{uid} = { email, role: "editor" | "viewer" | "engineer" }
 export function requireAuth(onReady){
   onAuthStateChanged(auth, async (user)=>{
     if(!user){ window.location.href = "login.html"; return; }
