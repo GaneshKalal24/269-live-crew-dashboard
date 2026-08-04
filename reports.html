@@ -208,7 +208,8 @@
 
   requireAuth(async (user, role)=>{
     currentUser=user;
-    document.getElementById('userChip').textContent = user.email+(role==='editor'?' · editor':' · viewer');
+    // Updated line: now displays the actual role rather than defaulting to 'viewer'
+    document.getElementById('userChip').textContent = user.email + ' · ' + role;
     const now=new Date(); viewYear=now.getFullYear(); viewMonth=now.getMonth();
     await refreshDates();
   });
