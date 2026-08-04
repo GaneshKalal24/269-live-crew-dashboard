@@ -269,11 +269,10 @@ let scheduleEdits = {};   // schedKey -> [{a,s,f}] overrides the base schedule
 
 let calibrating=false, addMode=false, draggingId=null, selectedId=null;
 
-// Updated role-based flags
 let CURRENT_USER = null;
 let USER_ROLE = 'viewer';
-let CAN_EDIT = false;   // Can update data (editor & engineer)
-let CAN_DELETE = false; // Can delete/calibrate (editor only)
+let CAN_EDIT = false;   
+let CAN_DELETE = false; 
 let LIVE_CACHE = {};
 
 function pad(n){ return String(n).padStart(2,'0'); }
@@ -294,27 +293,23 @@ async function pushLive(){
     positions, crewLog, statusOverrides, customPins, scheduleEdits
   }, CURRENT_USER);
 }
-// safeSet now just updates local + pushes the whole live doc (debounced)
 let _saveTimer=null;
 function safeSet(k,v){
-  // local state is already updated by callers; schedule a push
   clearTimeout(_saveTimer);
   _saveTimer=setTimeout(pushLive, 250);
 }
-function safeGet(){ return null; } // unused under Firebase (kept for call-compat)
+function safeGet(){ return null; }
 
 function allPins(){ return [...DEFAULT_PINS, ...customPins]; }
 function getPos(pin){ return positions[pin.id] || {x:pin.x, y:pin.y}; }
 function findPin(id){ return allPins().find(p=>p.id===id); }
 
-// activities come from scheduleEdits if present, else base schedule
 function activityRows(schedKey){
   if(!schedKey) return [];
   if(scheduleEdits[schedKey]) return scheduleEdits[schedKey];
   if(schedKey in BASE_SCHEDULE) return BASE_SCHEDULE[schedKey];
   return [];
 }
-// custom pins store their own activities under scheduleEdits keyed by pin id
 function pinSchedKey(pin){ return pin.sched || ('custom:'+pin.id); }
 
 function scheduleStatus(pin){
@@ -401,7 +396,6 @@ function showBubble(pin,pos){
   const b=document.createElement('div'); b.className='bubble';
   let left=pos.x, top=pos.y;
   b.style.left=left+'%'; b.style.top=top+'%';
-  // counter-scale so the bubble stays a readable size regardless of zoom, anchored at the pin
   b.style.transformOrigin='top left';
   b.style.transform='scale('+(1/zoomState.scale)+')';
   b.style.marginLeft=(14/zoomState.scale)+'px';
@@ -434,7 +428,6 @@ function showPanel(pin){
     let cls='',badge='<span class="act-badge up">Upcoming</span>';
     if(a.s&&a.f&&a.s<=TODAY&&TODAY<=a.f){ cls='current'; badge='<span class="act-badge now">Now</span>'; }
     else if(a.f&&a.f<TODAY){ badge='<span class="act-badge done">Done</span>'; }
-    // Updated row block to respect CAN_DELETE
     rows+=`<tr class="${cls}">
       <td><input class="act-name" data-i="${i}" value="${(a.a||'').replace(/"/g,'&quot;')}"></td>
       <td><input class="act-date" type="date" data-i="${i}" data-f="s" value="${a.s||''}"></td>
@@ -492,7 +485,6 @@ function showPanel(pin){
   recalcTotal();
   panel.querySelectorAll('.crew-input').forEach(inp=>inp.addEventListener('input',recalcTotal));
 
-  // activity edits
   panel.querySelectorAll('.act-name').forEach(inp=>inp.addEventListener('change',(e)=>editActivity(pin,schedKey,+e.target.dataset.i,'a',e.target.value)));
   panel.querySelectorAll('.act-date').forEach(inp=>inp.addEventListener('change',(e)=>editActivity(pin,schedKey,+e.target.dataset.i,e.target.dataset.f,e.target.value)));
   panel.querySelectorAll('.row-del').forEach(btn=>btn.addEventListener('click',(e)=>deleteActivity(pin,schedKey,+e.target.dataset.i)));
@@ -556,7 +548,7 @@ async function onDragEnd(){ if(!draggingId)return; draggingId=null; await safeSe
 
 document.getElementById('stage').addEventListener('click',(e)=>{
   if(!addMode)return;
-  if(panMoved)return; // ignore click that was actually a pan
+  if(panMoved)return; 
   if(e.target.closest('.pin')||e.target.closest('.bubble'))return;
   const rect=document.getElementById('viewport').getBoundingClientRect();
   const px=((e.clientX-rect.left)/rect.width)*100, py=((e.clientY-rect.top)/rect.height)*100;
@@ -565,7 +557,6 @@ document.getElementById('stage').addEventListener('click',(e)=>{
   const id='wf_'+Date.now();
   customPins.push({id,label:name,x:Math.round(px*100)/100,y:Math.round(py*100)/100,sched:null});
   safeSet('custom-pins',customPins);
-  // start it as On Hold so it shows amber until scheduled
   statusOverrides[id]='hold'; safeSet('status-overrides-all',statusOverrides);
   addMode=false; document.getElementById('addPinBtn').classList.remove('active'); document.getElementById('modeBanner').textContent='';
   selectedId=id; render(); const p=findPin(id); if(p){ showBubble(p,getPos(p)); showPanel(p); }
@@ -587,32 +578,38 @@ document.getElementById('resetPositionsBtn').addEventListener('click',async()=>{
   positions={}; await safeSet('pin-positions-all',positions); render();
 });
 
-// ---------- Lock report + logout ----------
 document.getElementById('lockBtn').addEventListener('click', lockTodayReport);
 document.getElementById('logoutBtn').addEventListener('click', doLogout);
 
-// ---------- CSV EXPORT ----------
+// ---------- CLEAN CSV EXPORT ----------
 function csvEsc(v){ v=(v==null?'':String(v)); return '"'+v.replace(/"/g,'""')+'"'; }
 document.getElementById('exportBtn').addEventListener('click',()=>{
   const rows=[];
-  rows.push(['Date','Structure / Work Front','Status','Current Activity','Activity Start','Activity Finish',
-             'Demolition','Asbestos','Scaffolding','Subcontractor','Total Crew','Notes','Last Updated']);
+  rows.push(['Date','Work Front','Activity','Crew Summary','Remarks & Difficulties']);
   allPins().forEach(pin=>{
     const st=effectiveStatus(pin); const log=crewLog[pin.id]||{crew:{}};
     const crew=log.crew||{};
     const total=crewTotal(pin.id);
-    // only export rows that are live/hold OR have crew logged OR have notes
     const hasData = (st.state==='live'||st.state==='hold') || total>0 || (log.notes&&log.notes.trim());
     if(!hasData) return;
+
+    let crewArr = [];
+    if(crew.demolition) crewArr.push(`${crew.demolition} Demolition`);
+    if(crew.asbestos) crewArr.push(`${crew.asbestos} Asbestos`);
+    if(crew.scaffolding) crewArr.push(`${crew.scaffolding} Scaffolding`);
+    if(crew.subcontractor) crewArr.push(`${crew.subcontractor} Subcontractor`);
+    let crewStr = crewArr.length > 0 ? `Total: ${total} (${crewArr.join(', ')})` : 'No crew logged';
+
     rows.push([
-      TODAY, pin.label, STATUS_LABEL[st.state], st.activity?st.activity.a:'',
-      st.activity?st.activity.s:'', st.activity?st.activity.f:'',
-      crew.demolition||0, crew.asbestos||0, crew.scaffolding||0, crew.subcontractor||0, total,
-      log.notes||'', log.updatedAt?fmtTs(log.updatedAt):''
+      TODAY, 
+      pin.label, 
+      st.activity ? st.activity.a : 'No activity',
+      crewStr,
+      log.notes || ''
     ]);
   });
-  if(rows.length===1){ alert('No live fronts or crew logged yet — nothing to export.\\nLog some crew first, then export.'); return; }
-  const csv=rows.map(r=>r.map(csvEsc).join(',')).join('\\r\\n');
+  if(rows.length===1){ alert('No live fronts or crew logged yet — nothing to export.\nLog some crew first, then export.'); return; }
+  const csv=rows.map(r=>r.map(csvEsc).join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -630,14 +627,12 @@ function applyTransform(){
   vp.style.transform='translate('+zoomState.x+'px,'+zoomState.y+'px) scale('+zoomState.scale+')';
   const zl=document.getElementById('zoomLevel');
   if(zl) zl.textContent=Math.round(zoomState.scale*100)+'%';
-  // re-render so bubble counter-scale updates
   const b=document.querySelector('#viewport .bubble');
   if(b) b.style.transform='scale('+(1/zoomState.scale)+')';
 }
 function clampPan(){
   const stage=document.getElementById('stage');
   const sw=stage.clientWidth, sh=stage.clientHeight;
-  // viewport natural (unscaled) size == stage width baseline (image is width:100%)
   const contentW=sw*zoomState.scale, contentH=(document.getElementById('viewport').offsetHeight)*zoomState.scale;
   const minX=Math.min(0, sw-contentW), minY=Math.min(0, sh-contentH);
   zoomState.x=Math.max(minX, Math.min(0, zoomState.x));
@@ -649,7 +644,6 @@ function zoomAt(clientX, clientY, factor){
   const ox=clientX-rect.left, oy=clientY-rect.top;
   const newScale=Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomState.scale*factor));
   const ratio=newScale/zoomState.scale;
-  // keep the point under cursor fixed
   zoomState.x = ox - (ox - zoomState.x)*ratio;
   zoomState.y = oy - (oy - zoomState.y)*ratio;
   zoomState.scale=newScale;
@@ -657,20 +651,16 @@ function zoomAt(clientX, clientY, factor){
 }
 function setupZoomPan(){
   const stage=document.getElementById('stage');
-
-  // wheel zoom
   stage.addEventListener('wheel',(e)=>{
     e.preventDefault();
     const factor = e.deltaY<0 ? 1.15 : 1/1.15;
     zoomAt(e.clientX, e.clientY, factor);
   }, {passive:false});
 
-  // buttons
   document.getElementById('zoomInBtn').onclick=()=>{ const r=stage.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1.3); };
   document.getElementById('zoomOutBtn').onclick=()=>{ const r=stage.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1/1.3); };
   document.getElementById('zoomResetBtn').onclick=()=>{ zoomState.scale=1; zoomState.x=0; zoomState.y=0; applyTransform(); };
 
-  // drag to pan (only when NOT calibrating/adding, and not starting on a pin)
   let panning=false, startX=0, startY=0, startPanX=0, startPanY=0;
   function panStart(e){
     if(calibrating||addMode) return;
@@ -714,7 +704,6 @@ async function loadAssets(){
   BASE_SCHEDULE = schedRes;
 }
 
-// ---- Lock end-of-day report: freeze today's state into /reports/{date} ----
 async function lockTodayReport(){
   if(!CAN_EDIT){ alert('You have view-only access. Ask an editor to lock the report.'); return; }
   const rows=[];
@@ -733,16 +722,13 @@ async function lockTodayReport(){
   });
   const payload={ date:TODAY, locked:true, rows, savedAt:Date.now(), savedBy:CURRENT_USER?CURRENT_USER.email:'' };
   await saveSnapshot(TODAY, payload);
-  alert('End-of-day report locked for '+TODAY+' ('+rows.length+' active fronts).\\nView it any time on the Reports page.');
+  alert('End-of-day report locked for '+TODAY+' ('+rows.length+' active fronts).\nView it any time on the Reports page.');
 }
 
-// Updated UI logic to hide/show specific tools based on exact role
 function wireEditingForRole(){
   if(!CAN_EDIT){
-    // Viewers cannot see any editing tools
     ['calibrateBtn','addPinBtn','resetPositionsBtn','lockBtn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
   } else if (!CAN_DELETE) {
-    // Engineers can add pins, but cannot calibrate, reset, or lock the report
     ['calibrateBtn','resetPositionsBtn','lockBtn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
   }
 }
@@ -751,8 +737,6 @@ async function init(){
   updateClock();
   setupZoomPan();
   await loadAssets();
-  
-  // Updated auth check logic
   requireAuth(async (user, role)=>{
     CURRENT_USER = user;
     USER_ROLE = role;
@@ -760,8 +744,6 @@ async function init(){
     CAN_DELETE = (role === 'editor');
     document.getElementById('userChip').textContent = user.email + ' · ' + role;
     wireEditingForRole();
-    
-    // initial load + live subscription
     const first = await loadLive();
     applyLive(first);
     render();
