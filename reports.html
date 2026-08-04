@@ -191,12 +191,28 @@
       </table>`;
   }
 
+  // ---------- CLEAN CSV EXPORT FOR REPORTS ----------
   function csvEsc(v){ v=(v==null?'':String(v)); return '"'+v.replace(/"/g,'""')+'"'; }
   function exportDay(dstr,snap){
-    const head=['Date','Work Front','Status','Activity','Activity Start','Activity Finish','Demolition','Asbestos','Scaffolding','Subcontractor','Total','Notes'];
+    const head=['Date','Work Front','Activity','Crew Summary','Remarks & Difficulties'];
     const lines=[head];
-    snap.rows.forEach(r=>lines.push([dstr,r.label,r.status,r.activity,r.actStart,r.actFinish,r.demolition,r.asbestos,r.scaffolding,r.subcontractor,r.total,r.notes]));
-    const csv=lines.map(l=>l.map(csvEsc).join(',')).join('\r\n');
+    snap.rows.forEach(r=>{
+      let crewArr = [];
+      if(r.demolition) crewArr.push(`${r.demolition} Demolition`);
+      if(r.asbestos) crewArr.push(`${r.asbestos} Asbestos`);
+      if(r.scaffolding) crewArr.push(`${r.scaffolding} Scaffolding`);
+      if(r.subcontractor) crewArr.push(`${r.subcontractor} Subcontractor`);
+      let crewStr = crewArr.length > 0 ? `Total: ${r.total} (${crewArr.join(', ')})` : 'No crew logged';
+
+      lines.push([
+        dstr,
+        r.label,
+        r.activity || 'No activity',
+        crewStr,
+        r.notes || ''
+      ]);
+    });
+    const csv=lines.map(l=>l.map(csvEsc).join(',')).join('\n');
     const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
     const url=URL.createObjectURL(blob); const a=document.createElement('a');
     a.href=url; a.download='269-ARD_report_'+dstr+'.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
@@ -208,7 +224,6 @@
 
   requireAuth(async (user, role)=>{
     currentUser=user;
-    // Updated line: now displays the actual role rather than defaulting to 'viewer'
     document.getElementById('userChip').textContent = user.email + ' · ' + role;
     const now=new Date(); viewYear=now.getFullYear(); viewMonth=now.getMonth();
     await refreshDates();
