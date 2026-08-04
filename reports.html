@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reports — 269-ARD Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#080B10; --panel:#111823; --panel-alt:#151E2B; --panel-hi:#1B2635; --border:#26303F;
+    --text:#EAF0F7; --muted:#8A97A8; --cyan:#22D3EE; --green:#22C55E; --amber:#F59E0B; --blue:#3B82F6; --grey:#6B7280;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:'IBM Plex Sans',sans-serif; }
+  .titlebar{ display:flex; align-items:center; gap:16px; padding:12px 22px; background:linear-gradient(180deg,#141C27,#0D131C); border-bottom:2px solid var(--border); }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand .dot{ width:10px; height:10px; border-radius:50%; background:var(--green); box-shadow:0 0 10px var(--green); }
+  .brand h1{ font-family:'Oswald',sans-serif; font-size:18px; font-weight:700; letter-spacing:.5px; margin:0; text-transform:uppercase; }
+  .brand .sub{ color:var(--muted); font-size:11.5px; }
+  .topnav{ display:flex; align-items:center; gap:6px; margin-left:auto; }
+  .navlink{ color:var(--muted); text-decoration:none; font-size:13px; font-weight:600; padding:7px 12px; border-radius:7px; }
+  .navlink:hover{ background:var(--panel-hi); color:var(--text); }
+  .navlink.active{ background:var(--cyan); color:#04222A; }
+  .userchip{ font-size:11.5px; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-left:8px; }
+  button.btn{ font-family:inherit; font-weight:600; font-size:12.5px; border-radius:7px; cursor:pointer; padding:8px 13px; border:1px solid var(--border); background:var(--panel); color:var(--text); }
+  button.btn:hover{ background:var(--panel-hi); }
+  button.btn.logout{ padding:6px 11px; font-size:12px; }
+  button.btn.export{ background:var(--green); color:#052E14; border-color:var(--green); }
+
+  .main{ display:flex; gap:16px; padding:16px 20px; align-items:flex-start; }
+  .cal-card{ width:340px; flex-shrink:0; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; }
+  .cal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .cal-head .mon{ font-family:'Oswald',sans-serif; font-size:16px; letter-spacing:.3px; }
+  .cal-head button{ background:var(--panel-alt); border:1px solid var(--border); color:var(--text); width:30px; height:30px; border-radius:7px; cursor:pointer; font-size:15px; }
+  .cal-head button:hover{ background:var(--panel-hi); }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .cal-dow{ text-align:center; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; padding:4px 0; font-weight:700; }
+  .cal-day{ aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:8px; font-size:13px; cursor:pointer; border:1px solid transparent; position:relative; color:var(--muted); }
+  .cal-day.inmonth{ color:var(--text); background:var(--panel-alt); }
+  .cal-day.inmonth:hover{ background:var(--panel-hi); }
+  .cal-day.has-report{ border-color:var(--green); }
+  .cal-day.has-report .marker{ width:5px; height:5px; border-radius:50%; background:var(--green); position:absolute; bottom:5px; }
+  .cal-day.today{ outline:2px solid var(--cyan); outline-offset:-2px; }
+  .cal-day.selected{ background:var(--cyan) !important; color:#04222A; font-weight:700; }
+  .cal-legend{ margin-top:12px; font-size:11px; color:var(--muted); display:flex; align-items:center; gap:8px; }
+  .cal-legend .sw{ width:8px; height:8px; border-radius:50%; background:var(--green); display:inline-block; }
+
+  .report-card{ flex:1; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:20px; min-height:400px; }
+  .report-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .report-head h2{ font-family:'Oswald',sans-serif; font-size:18px; margin:0; letter-spacing:.3px; }
+  .report-meta{ color:var(--muted); font-size:12px; margin-bottom:16px; font-family:'IBM Plex Mono',monospace; }
+  .report-empty{ color:var(--muted); text-align:center; padding:80px 10px; font-size:14px; line-height:1.6; }
+
+  .rsummary{ display:flex; gap:1px; background:var(--border); border-radius:8px; overflow:hidden; margin-bottom:16px; }
+  .rsummary .cell{ flex:1; background:var(--panel-alt); padding:10px; text-align:center; }
+  .rsummary .cell .v{ font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:700; }
+  .rsummary .cell .l{ font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
+  .rsummary .demo .v{ color:#EF4444; } .rsummary .asb .v{ color:#A855F7; } .rsummary .scaff .v{ color:#0EA5E9; } .rsummary .sub .v{ color:#F59E0B; } .rsummary .tot .v{ color:var(--cyan); }
+
+  table.rtable{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.rtable th{ text-align:left; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.4px; padding:8px 6px; border-bottom:2px solid var(--border); font-weight:700; }
+  table.rtable td{ padding:8px 6px; border-bottom:1px solid #1A2230; vertical-align:top; }
+  table.rtable td.num{ font-family:'IBM Plex Mono',monospace; text-align:center; }
+  .spill{ font-size:11px; padding:2px 8px; border-radius:999px; font-weight:700; }
+  .spill.live{ background:rgba(34,197,94,.14); color:var(--green); }
+  .spill.hold{ background:rgba(245,158,11,.14); color:var(--amber); }
+  .rnotes{ color:var(--muted); font-size:11.5px; }
+
+  ::-webkit-scrollbar{ width:8px; } ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+</style>
+</head>
+<body>
+  <div class="titlebar">
+    <div class="brand"><span class="dot"></span>
+      <div><h1>269-ARD Reports</h1><div class="sub">Daily crew &amp; work-front history</div></div>
+    </div>
+    <div class="topnav">
+      <a class="navlink" href="index.html">Live Board</a>
+      <a class="navlink active" href="reports.html">Reports</a>
+      <span class="userchip" id="userChip">…</span>
+      <button class="btn logout" id="logoutBtn">Sign out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="cal-card">
+      <div class="cal-head">
+        <button id="prevMon">‹</button>
+        <span class="mon" id="calMonth">—</span>
+        <button id="nextMon">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend"><span class="sw"></span> Days with a locked report</div>
+    </div>
+
+    <div class="report-card">
+      <div class="report-head">
+        <h2 id="reportTitle">Select a date</h2>
+        <button class="btn export" id="exportDayBtn" style="display:none;">⭳ Export this day (CSV)</button>
+      </div>
+      <div class="report-meta" id="reportMeta"></div>
+      <div id="reportBody"><div class="report-empty">Pick a date on the calendar.<br>Green-outlined days have a locked end-of-day report.</div></div>
+    </div>
+  </div>
+
+<script type="module">
+  import { requireAuth, doLogout, loadSnapshot, listSnapshotDates } from "./js/app-common.js";
+
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dows=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function ymd(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function fmtDMY(s){ if(!s)return'—'; const [y,m,dd]=s.split('-'); return dd+'/'+m+'/'+y.slice(2); }
+
+  let viewYear, viewMonth, reportDates=new Set(), selectedDate=null, currentUser=null;
+
+  async function refreshDates(){
+    const list = await listSnapshotDates();
+    reportDates = new Set(list.filter(x=>x.locked).map(x=>x.date));
+    renderCal();
+  }
+
+  function renderCal(){
+    document.getElementById('calMonth').textContent = months[viewMonth]+' '+viewYear;
+    const grid=document.getElementById('calGrid'); grid.innerHTML='';
+    dows.forEach(d=>{ const el=document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el); });
+    const first=new Date(viewYear,viewMonth,1);
+    const startDow=first.getDay();
+    const daysInMonth=new Date(viewYear,viewMonth+1,0).getDate();
+    const todayS=ymd(new Date());
+    for(let i=0;i<startDow;i++){ grid.appendChild(document.createElement('div')); }
+    for(let day=1;day<=daysInMonth;day++){
+      const dstr=viewYear+'-'+pad(viewMonth+1)+'-'+pad(day);
+      const el=document.createElement('div');
+      el.className='cal-day inmonth';
+      if(reportDates.has(dstr)) el.classList.add('has-report');
+      if(dstr===todayS) el.classList.add('today');
+      if(dstr===selectedDate) el.classList.add('selected');
+      el.innerHTML = day + (reportDates.has(dstr)?'<span class="marker"></span>':'');
+      el.onclick=()=>{ selectedDate=dstr; renderCal(); openReport(dstr); };
+      grid.appendChild(el);
+    }
+  }
+
+  async function openReport(dstr){
+    const title=document.getElementById('reportTitle');
+    const meta=document.getElementById('reportMeta');
+    const bodyEl=document.getElementById('reportBody');
+    const exportBtn=document.getElementById('exportDayBtn');
+    title.textContent = 'Report — '+fmtDMY(dstr);
+    const snap = await loadSnapshot(dstr);
+    if(!snap || !snap.rows || snap.rows.length===0){
+      meta.textContent=''; exportBtn.style.display='none';
+      bodyEl.innerHTML='<div class="report-empty">No locked report for this date.<br>Reports are created from the Live Board with “Lock end-of-day report”.</div>';
+      return;
+    }
+    const t={demolition:0,asbestos:0,scaffolding:0,subcontractor:0,total:0};
+    snap.rows.forEach(r=>{ t.demolition+=r.demolition||0; t.asbestos+=r.asbestos||0; t.scaffolding+=r.scaffolding||0; t.subcontractor+=r.subcontractor||0; t.total+=r.total||0; });
+    meta.textContent = 'Locked by '+(snap.savedBy||'—')+' · '+(snap.savedAt?new Date(snap.savedAt).toLocaleString('en-AU'):'')+' · '+snap.rows.length+' active fronts';
+    exportBtn.style.display='inline-block';
+    exportBtn.onclick=()=>exportDay(dstr,snap);
+
+    let rows='';
+    snap.rows.forEach(r=>{
+      const sp = (r.status||'').indexOf('HOLD')>=0 ? 'hold':'live';
+      rows+=`<tr>
+        <td><b>${r.label}</b></td>
+        <td><span class="spill ${sp}">${r.status}</span></td>
+        <td>${r.activity||'—'}<div class="rnotes">${r.actStart?fmtDMY(r.actStart)+' → '+fmtDMY(r.actFinish):''}</div></td>
+        <td class="num">${r.demolition||0}</td>
+        <td class="num">${r.asbestos||0}</td>
+        <td class="num">${r.scaffolding||0}</td>
+        <td class="num">${r.subcontractor||0}</td>
+        <td class="num"><b>${r.total||0}</b></td>
+        <td class="rnotes">${(r.notes||'').replace(/</g,'&lt;')}</td>
+      </tr>`;
+    });
+
+    bodyEl.innerHTML = `
+      <div class="rsummary">
+        <div class="cell demo"><div class="v">${t.demolition}</div><div class="l">Demolition</div></div>
+        <div class="cell asb"><div class="v">${t.asbestos}</div><div class="l">Asbestos</div></div>
+        <div class="cell scaff"><div class="v">${t.scaffolding}</div><div class="l">Scaffolding</div></div>
+        <div class="cell sub"><div class="v">${t.subcontractor}</div><div class="l">Subcontractor</div></div>
+        <div class="cell tot"><div class="v">${t.total}</div><div class="l">Total crew</div></div>
+      </div>
+      <table class="rtable">
+        <thead><tr><th>Work Front</th><th>Status</th><th>Activity</th><th>Demo</th><th>Asb</th><th>Scaff</th><th>Sub</th><th>Total</th><th>Notes</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  function csvEsc(v){ v=(v==null?'':String(v)); return '"'+v.replace(/"/g,'""')+'"'; }
+  function exportDay(dstr,snap){
+    const head=['Date','Work Front','Status','Activity','Activity Start','Activity Finish','Demolition','Asbestos','Scaffolding','Subcontractor','Total','Notes'];
+    const lines=[head];
+    snap.rows.forEach(r=>lines.push([dstr,r.label,r.status,r.activity,r.actStart,r.actFinish,r.demolition,r.asbestos,r.scaffolding,r.subcontractor,r.total,r.notes]));
+    const csv=lines.map(l=>l.map(csvEsc).join(',')).join('\r\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=url; a.download='269-ARD_report_'+dstr+'.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+
+  document.getElementById('prevMon').onclick=()=>{ viewMonth--; if(viewMonth<0){viewMonth=11;viewYear--;} renderCal(); };
+  document.getElementById('nextMon').onclick=()=>{ viewMonth++; if(viewMonth>11){viewMonth=0;viewYear++;} renderCal(); };
+  document.getElementById('logoutBtn').onclick=doLogout;
+
+  requireAuth(async (user, role)=>{
+    currentUser=user;
+    document.getElementById('userChip').textContent = user.email+(role==='editor'?' · editor':' · viewer');
+    const now=new Date(); viewYear=now.getFullYear(); viewMonth=now.getMonth();
+    await refreshDates();
+  });
+</script>
+</body>
+</html>
