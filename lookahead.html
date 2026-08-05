@@ -28,6 +28,10 @@
 
   /* GANTT */
   .rollup{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .la-date{font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:3px 5px;border-radius:6px;border:1px solid var(--glass-line);background:var(--glass-2);color:var(--ink);}
+  .la-date:focus{outline:none;border-color:var(--acc2);}
+  .la-pct{width:48px;font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:3px 5px;border-radius:6px;border:1px solid var(--glass-line);background:var(--glass-2);color:var(--ink);margin-left:6px;}
+  .la-pct:focus{outline:none;border-color:var(--acc2);}
   .srchip{display:flex;align-items:center;gap:8px;background:var(--glass-2);border:1px solid var(--glass-line);border-radius:10px;padding:7px 11px;}
   .srname{font-size:11.5px;font-weight:600;color:var(--ink);}
   .srbar{width:60px;height:6px;background:var(--glass-line);border-radius:3px;overflow:hidden;}
@@ -104,11 +108,21 @@
 </div>
 
 <script type="module">
-import { requireAuth, doLogout } from "./js/app-common.js";
+import { requireAuth, doLogout, loadLive, watchLive, saveLive, canEdit } from "./js/app-common.js";
 import { initTheme, toggleTheme, startClock, todayISO, addDaysISO, fmtDMY, fmtDayDMY, daysBetween, buildLookahead } from "./js/ui-common.js";
 
-let SCHEDULE={};
+let BASE_SCHEDULE={};      // from schedule.json
+let scheduleEdits={};      // overrides from Firebase (same doc as Live Board)
+let SCHEDULE={};           // merged view used for rendering
 let rangeDays=7;
+let CAN_EDIT=false;
+let CURRENT_USER=null;
+
+function rebuildMerged(){
+  SCHEDULE={};
+  const keys=new Set([...Object.keys(BASE_SCHEDULE), ...Object.keys(scheduleEdits)]);
+  keys.forEach(k=>{ SCHEDULE[k] = scheduleEdits[k] ? scheduleEdits[k] : BASE_SCHEDULE[k]; });
+}
 
 initTheme();
 document.getElementById('themeBtn').onclick=()=>{ toggleTheme(); render(); };
@@ -163,12 +177,18 @@ function tableHTML(items, cls){
   if(items.length===0) return '';
   let rows='';
   items.forEach(it=>{
+    const dateCell = (val, field)=> CAN_EDIT
+      ? '<input class="la-date" type="date" data-struct="'+encodeURIComponent(it.structure)+'" data-idx="'+it.idx+'" data-field="'+field+'" value="'+val+'">'
+      : fmtDayDMY(val);
+    const pctCell = CAN_EDIT
+      ? '<span class="pbar '+cls+'"><span style="width:'+it.p+'%"></span></span><input class="la-pct" type="number" min="0" max="100" data-struct="'+encodeURIComponent(it.structure)+'" data-idx="'+it.idx+'" data-field="p" value="'+it.p+'">%'
+      : '<span class="pbar '+cls+'"><span style="width:'+it.p+'%"></span></span><span class="pct">'+it.p+'%</span>';
     rows+='<tr>'+
       '<td class="struct">'+it.structure+'</td>'+
       '<td>'+it.activity+'</td>'+
-      '<td class="dt">'+fmtDayDMY(it.s)+'</td>'+
-      '<td class="dt">'+fmtDayDMY(it.f)+'</td>'+
-      '<td><span class="pbar '+cls+'"><span style="width:'+it.p+'%"></span></span><span class="pct">'+it.p+'%</span></td>'+
+      '<td class="dt">'+dateCell(it.s,'s')+'</td>'+
+      '<td class="dt">'+dateCell(it.f,'f')+'</td>'+
+      '<td>'+pctCell+'</td>'+
       '<td><span class="stat-tag '+it.status+'">'+it.status.toUpperCase()+'</span></td>'+
     '</tr>';
   });
@@ -208,26 +228,72 @@ function sectionHTML(title, cls, dotcls, items, fromISO, toISO){
 }
 
 function render(){
+  rebuildMerged();
   const from=todayISO();
   const to=addDaysISO(from, rangeDays);
   const data=buildLookahead(SCHEDULE, from, to);
-  document.getElementById('rangeInfo').innerHTML='Window: <b>'+fmtDMY(from)+'</b> → <b>'+fmtDMY(to)+'</b> · '+rangeDays+' days';
+  document.getElementById('rangeInfo').innerHTML='Window: <b>'+fmtDMY(from)+'</b> → <b>'+fmtDMY(to)+'</b> · '+rangeDays+' days'+(CAN_EDIT?' · <span style="color:var(--acc2)">editing enabled</span>':'');
   const c=document.getElementById('content');
   c.innerHTML =
     sectionHTML('Scaffolding', 'scaff', 'scaff', data.scaffolding, from, to)+
     sectionHTML('Asbestos Removal', 'asb', 'asb', data.asbestos, from, to);
+  if(CAN_EDIT) attachEditHandlers();
+}
+
+function ensureEditable(structure){
+  if(!scheduleEdits[structure]){
+    const base = BASE_SCHEDULE[structure] || [];
+    scheduleEdits[structure] = base.map(a=>({a:a.a, s:a.s, f:a.f, p:a.p||0}));
+  }
+}
+let _saveTimer=null;
+function queueSave(){
+  clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(async()=>{
+    try{
+      const cur = await loadLive();
+      await saveLive({ ...cur, scheduleEdits }, CURRENT_USER);
+    }catch(e){ console.error('save failed', e); }
+  }, 400);
+}
+function attachEditHandlers(){
+  document.querySelectorAll('.la-date, .la-pct').forEach(inp=>{
+    inp.addEventListener('change',(e)=>{
+      const structure=decodeURIComponent(e.target.dataset.struct);
+      const idx=+e.target.dataset.idx;
+      const field=e.target.dataset.field;
+      ensureEditable(structure);
+      let val=e.target.value;
+      if(field==='p'){ val=Math.max(0,Math.min(100,Number(val)||0)); }
+      if(scheduleEdits[structure] && scheduleEdits[structure][idx]){
+        scheduleEdits[structure][idx][field]=val;
+        queueSave();
+        render();
+      }
+    });
+  });
 }
 
 async function loadSchedule(){
-  SCHEDULE = await fetch('assets/schedule.json').then(r=>r.json());
+  BASE_SCHEDULE = await fetch('assets/schedule.json').then(r=>r.json());
 }
 
 async function init(){
   await loadSchedule();
-  requireAuth((user, role)=>{
+  requireAuth(async (user, role)=>{
+    CURRENT_USER = user;
+    CAN_EDIT = canEdit(role);
     document.getElementById('userChip').textContent = (user.isAnonymous ? 'Guest' : user.email) + ' · ' + role;
     if(role === 'guest'){ const rl=document.getElementById('reportsLink'); if(rl) rl.style.display='none'; }
+    // load any schedule edits from Firebase and keep in sync
+    try{
+      const live = await loadLive();
+      scheduleEdits = live.scheduleEdits || {};
+    }catch(e){ console.error('loadLive failed', e); scheduleEdits={}; }
     render();
+    try{
+      watchLive((data)=>{ scheduleEdits = data.scheduleEdits || {}; render(); });
+    }catch(e){ console.error('watchLive failed', e); }
   });
 }
 init();
