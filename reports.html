@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reports — 269-ARD Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+:root{
+  --bg:#0A0C12; --glass:rgba(255,255,255,.045); --glass-2:rgba(255,255,255,.03); --glass-hi:rgba(255,255,255,.08);
+  --line:rgba(255,255,255,.09); --text:#EEF1F6; --muted:#8B93A7; --faint:#5B6B7E;
+  --acc:#7C5CFF; --acc2:#22D3EE; --cyan:#22D3EE;
+  --green:#34D399; --amber:#FBBF24; --blue:#60A5FA; --grey:#6B7280;
+  --panel:var(--glass); --panel-alt:var(--glass-2); --panel-hi:var(--glass-hi); --border:var(--line);
+  --shadow:0 8px 30px rgba(0,0,0,.35); --aurora-1:var(--acc); --aurora-2:var(--acc2);
+}
+:root[data-theme="light"]{
+  --bg:#EEF1F7; --glass:rgba(255,255,255,.72); --glass-2:rgba(255,255,255,.5); --glass-hi:rgba(255,255,255,.9);
+  --line:rgba(20,30,60,.1); --text:#161A22; --muted:#5A6478; --faint:#94A3B8;
+  --acc:#6D4EF2; --acc2:#0BB5D6; --cyan:#0BB5D6;
+  --green:#059669; --amber:#D97706; --blue:#2563EB; --grey:#94A3B8;
+  --shadow:0 8px 30px rgba(30,40,80,.12); --aurora-1:#B7A6FF; --aurora-2:#7FE3F0;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;transition:background .4s,color .4s;}
+body::before,body::after{content:'';position:fixed;border-radius:50%;filter:blur(110px);opacity:.30;pointer-events:none;z-index:0;}
+body::before{width:540px;height:540px;background:var(--aurora-1);top:-170px;left:-130px;animation:drift1 20s ease-in-out infinite;}
+body::after{width:460px;height:460px;background:var(--aurora-2);bottom:-170px;right:-110px;animation:drift2 24s ease-in-out infinite;}
+@keyframes drift1{0%,100%{transform:translate(0,0);}50%{transform:translate(90px,70px);}}
+@keyframes drift2{0%,100%{transform:translate(0,0);}50%{transform:translate(-80px,-60px);}}
+
+.titlebar{position:relative;z-index:2;display:flex;align-items:center;gap:16px;margin:12px;padding:11px 18px;background:var(--glass);border:1px solid var(--line);border-radius:16px;backdrop-filter:blur(20px);box-shadow:var(--shadow);}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand .dot,.brand .live-dot{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));box-shadow:0 4px 18px rgba(124,92,255,.45);position:relative;flex-shrink:0;}
+.brand .dot::after,.brand .live-dot::after{content:'';position:absolute;inset:0;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));animation:lp 2.4s infinite;}
+@keyframes lp{0%{opacity:.5;transform:scale(1);}100%{opacity:0;transform:scale(1.55);}}
+.brand h1{font-family:'Sora',sans-serif;font-size:15px;font-weight:600;line-height:1.15;}
+.brand .sub{font-size:10.5px;color:var(--muted);}
+.topnav{display:flex;align-items:center;gap:4px;margin-left:8px;}
+.navlink{font-size:12.5px;font-weight:500;color:var(--muted);text-decoration:none;padding:7px 13px;border-radius:9px;transition:.2s;}
+.navlink:hover{background:var(--glass-2);color:var(--text);}
+.navlink.active{background:linear-gradient(135deg,rgba(124,92,255,.22),rgba(34,211,238,.18));color:var(--text);box-shadow:inset 0 0 0 1px var(--line);}
+.userchip{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-left:6px;}
+.spacer{margin-left:auto;}
+.clock{margin-left:auto;text-align:right;font-family:'JetBrains Mono',monospace;}
+.clock .time{font-size:17px;font-weight:500;}
+.clock .date{font-size:10px;color:var(--muted);}
+.theme-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--glass-2);color:var(--text);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:.25s;}
+.theme-btn:hover{background:var(--glass);transform:translateY(-1px);}
+.btn{font-family:'Inter',sans-serif;font-weight:600;font-size:12.5px;border-radius:10px;cursor:pointer;padding:8px 13px;border:1px solid var(--line);background:var(--glass-2);color:var(--text);transition:.2s;}
+.btn:hover{background:var(--glass-hi);}
+.btn.logout{padding:7px 11px;font-size:12px;}
+.btn.export{background:linear-gradient(135deg,var(--green),#059669);color:#fff;border:none;}
+
+.main{position:relative;z-index:2;display:flex;gap:14px;padding:0 12px 12px;align-items:flex-start;}
+.cal-card{width:340px;flex-shrink:0;background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:16px;backdrop-filter:blur(20px);box-shadow:var(--shadow);}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-head .mon{font-family:'Sora',sans-serif;font-size:16px;font-weight:600;}
+.cal-head button{background:var(--glass-2);border:1px solid var(--line);color:var(--text);width:30px;height:30px;border-radius:9px;cursor:pointer;font-size:15px;transition:.2s;}
+.cal-head button:hover{background:var(--glass-hi);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-dow{text-align:center;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;padding:4px 0;font-weight:700;}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;font-size:13px;cursor:pointer;border:1px solid transparent;position:relative;color:var(--muted);transition:.15s;}
+.cal-day.inmonth{color:var(--text);background:var(--glass-2);}
+.cal-day.inmonth:hover{background:var(--glass-hi);transform:translateY(-1px);}
+.cal-day.has-report{border-color:var(--green);}
+.cal-day.has-report .marker{width:5px;height:5px;border-radius:50%;background:var(--green);position:absolute;bottom:5px;box-shadow:0 0 6px var(--green);}
+.cal-day.today{outline:2px solid var(--acc2);outline-offset:-2px;}
+.cal-day.selected{background:linear-gradient(135deg,var(--acc),var(--acc2)) !important;color:#fff;font-weight:700;}
+.cal-legend{margin-top:12px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px;}
+.cal-legend .sw{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;box-shadow:0 0 6px var(--green);}
+
+.report-card{flex:1;background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:20px;min-height:400px;backdrop-filter:blur(20px);box-shadow:var(--shadow);}
+.report-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.report-head h2{font-family:'Sora',sans-serif;font-size:18px;font-weight:600;}
+.report-meta{color:var(--muted);font-size:12px;margin-bottom:16px;font-family:'JetBrains Mono',monospace;}
+.report-empty{color:var(--muted);text-align:center;padding:80px 10px;font-size:14px;line-height:1.6;}
+.rsummary{display:flex;gap:8px;margin-bottom:16px;}
+.rsummary .cell{flex:1;background:var(--glass-2);border:1px solid var(--line);border-radius:12px;padding:12px 10px;text-align:center;transition:.2s;}
+.rsummary .cell:hover{transform:translateY(-2px);}
+.rsummary .cell .v{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;}
+.rsummary .cell .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
+.rsummary .demo .v{color:#F87171;} .rsummary .asb .v{color:#C084FC;} .rsummary .scaff .v{color:#38BDF8;} .rsummary .sub .v{color:#FBBF24;} .rsummary .tot .v{color:var(--acc2);}
+table.rtable{width:100%;border-collapse:collapse;font-size:12.5px;}
+table.rtable th{text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.4px;padding:8px 6px;border-bottom:1px solid var(--line);font-weight:700;}
+table.rtable td{padding:8px 6px;border-bottom:1px solid var(--glass-2);vertical-align:top;}
+table.rtable tr:hover td{background:var(--glass-2);}
+table.rtable td.num{font-family:'JetBrains Mono',monospace;text-align:center;}
+.spill{font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700;}
+.spill.live{background:rgba(52,211,153,.15);color:var(--green);}
+.spill.hold{background:rgba(251,191,36,.15);color:var(--amber);}
+.rnotes{color:var(--muted);font-size:11.5px;}
+::-webkit-scrollbar{width:9px;height:9px;}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important;}}
+
+</style>
+</head>
+<body>
+  <div class="titlebar">
+    <div class="brand"><span class="dot"></span>
+      <div><h1>269-ARD Reports</h1><div class="sub">Daily crew &amp; work-front history</div></div>
+    </div>
+    <div class="topnav">
+      <a class="navlink" href="index.html">Live Board</a>
+      <a class="navlink active" href="reports.html">Reports</a>
+      <span class="userchip" id="userChip">…</span>
+      <button class="theme-btn" id="themeBtn" title="Toggle day/night">☀</button>
+      <button class="btn logout" id="logoutBtn">Sign out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="cal-card">
+      <div class="cal-head">
+        <button id="prevMon">‹</button>
+        <span class="mon" id="calMonth">—</span>
+        <button id="nextMon">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend"><span class="sw"></span> Days with a locked report</div>
+    </div>
+
+    <div class="report-card">
+      <div class="report-head">
+        <h2 id="reportTitle">Select a date</h2>
+        <button class="btn export" id="exportDayBtn" style="display:none;">⭳ Export this day (CSV)</button>
+      </div>
+      <div class="report-meta" id="reportMeta"></div>
+      <div id="reportBody"><div class="report-empty">Pick a date on the calendar.<br>Green-outlined days have a locked end-of-day report.</div></div>
+    </div>
+  </div>
+
+<script type="module">
+  import { requireNonGuest, doLogout, loadSnapshot, listSnapshotDates } from "./js/app-common.js";
+
+  (function initTheme(){ const s=localStorage.getItem('ard-theme')||'dark'; document.documentElement.setAttribute('data-theme',s); })();
+  function updateThemeBtn(){ const t=document.documentElement.getAttribute('data-theme')||'dark'; const b=document.getElementById('themeBtn'); if(b) b.textContent=t==='light'?'☾':'☀'; }
+  function toggleTheme(){ const c=document.documentElement.getAttribute('data-theme')||'dark'; const n=c==='light'?'dark':'light'; document.documentElement.setAttribute('data-theme',n); localStorage.setItem('ard-theme',n); updateThemeBtn(); }
+
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dows=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function ymd(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function fmtDMY(s){ if(!s)return'—'; const [y,m,dd]=s.split('-'); return dd+'/'+m+'/'+y.slice(2); }
+
+  let viewYear, viewMonth, reportDates=new Set(), selectedDate=null, currentUser=null;
+
+  async function refreshDates(){
+    const list = await listSnapshotDates();
+    reportDates = new Set(list.filter(x=>x.locked).map(x=>x.date));
+    renderCal();
+  }
+
+  function renderCal(){
+    document.getElementById('calMonth').textContent = months[viewMonth]+' '+viewYear;
+    const grid=document.getElementById('calGrid'); grid.innerHTML='';
+    dows.forEach(d=>{ const el=document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el); });
+    const first=new Date(viewYear,viewMonth,1);
+    const startDow=first.getDay();
+    const daysInMonth=new Date(viewYear,viewMonth+1,0).getDate();
+    const todayS=ymd(new Date());
+    for(let i=0;i<startDow;i++){ grid.appendChild(document.createElement('div')); }
+    for(let day=1;day<=daysInMonth;day++){
+      const dstr=viewYear+'-'+pad(viewMonth+1)+'-'+pad(day);
+      const el=document.createElement('div');
+      el.className='cal-day inmonth';
+      if(reportDates.has(dstr)) el.classList.add('has-report');
+      if(dstr===todayS) el.classList.add('today');
+      if(dstr===selectedDate) el.classList.add('selected');
+      el.innerHTML = day + (reportDates.has(dstr)?'<span class="marker"></span>':'');
+      el.onclick=()=>{ selectedDate=dstr; renderCal(); openReport(dstr); };
+      grid.appendChild(el);
+    }
+  }
+
+  async function openReport(dstr){
+    const title=document.getElementById('reportTitle');
+    const meta=document.getElementById('reportMeta');
+    const bodyEl=document.getElementById('reportBody');
+    const exportBtn=document.getElementById('exportDayBtn');
+    title.textContent = 'Report — '+fmtDMY(dstr);
+    const snap = await loadSnapshot(dstr);
+    if(!snap || !snap.rows || snap.rows.length===0){
+      meta.textContent=''; exportBtn.style.display='none';
+      bodyEl.innerHTML='<div class="report-empty">No locked report for this date.<br>Reports are created from the Live Board with “Lock end-of-day report”.</div>';
+      return;
+    }
+    const t={demolition:0,asbestos:0,scaffolding:0,subcontractor:0,total:0};
+    snap.rows.forEach(r=>{ t.demolition+=r.demolition||0; t.asbestos+=r.asbestos||0; t.scaffolding+=r.scaffolding||0; t.subcontractor+=r.subcontractor||0; t.total+=r.total||0; });
+    meta.textContent = 'Locked by '+(snap.savedBy||'—')+' · '+(snap.savedAt?new Date(snap.savedAt).toLocaleString('en-AU'):'')+' · '+snap.rows.length+' active fronts';
+    exportBtn.style.display='inline-block';
+    exportBtn.onclick=()=>exportDay(dstr,snap);
+
+    let rows='';
+    snap.rows.forEach(r=>{
+      const sp = (r.status||'').indexOf('HOLD')>=0 ? 'hold':'live';
+      rows+=`<tr>
+        <td><b>${r.label}</b></td>
+        <td><span class="spill ${sp}">${r.status}</span></td>
+        <td>${r.activity||'—'}<div class="rnotes">${r.actStart?fmtDMY(r.actStart)+' → '+fmtDMY(r.actFinish):''}</div></td>
+        <td class="num">${r.demolition||0}</td>
+        <td class="num">${r.asbestos||0}</td>
+        <td class="num">${r.scaffolding||0}</td>
+        <td class="num">${r.subcontractor||0}</td>
+        <td class="num"><b>${r.total||0}</b></td>
+        <td class="rnotes">${(r.notes||'').replace(/</g,'&lt;')}</td>
+      </tr>`;
+    });
+
+    bodyEl.innerHTML = `
+      <div class="rsummary">
+        <div class="cell demo"><div class="v">${t.demolition}</div><div class="l">Demolition</div></div>
+        <div class="cell asb"><div class="v">${t.asbestos}</div><div class="l">Asbestos</div></div>
+        <div class="cell scaff"><div class="v">${t.scaffolding}</div><div class="l">Scaffolding</div></div>
+        <div class="cell sub"><div class="v">${t.subcontractor}</div><div class="l">Subcontractor</div></div>
+        <div class="cell tot"><div class="v">${t.total}</div><div class="l">Total crew</div></div>
+      </div>
+      <table class="rtable">
+        <thead><tr><th>Work Front</th><th>Status</th><th>Activity</th><th>Demo</th><th>Asb</th><th>Scaff</th><th>Sub</th><th>Total</th><th>Notes</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  // ---------- CLEAN CSV EXPORT FOR REPORTS ----------
+  function csvEsc(v){ v=(v==null?'':String(v)); return '"'+v.replace(/"/g,'""')+'"'; }
+  function exportDay(dstr,snap){
+    const head=['Date','Work Front','Activity','Crew Summary','Remarks & Difficulties'];
+    const lines=[head];
+    snap.rows.forEach(r=>{
+      let crewArr = [];
+      if(r.demolition) crewArr.push(`${r.demolition} Demolition`);
+      if(r.asbestos) crewArr.push(`${r.asbestos} Asbestos`);
+      if(r.scaffolding) crewArr.push(`${r.scaffolding} Scaffolding`);
+      if(r.subcontractor) crewArr.push(`${r.subcontractor} Subcontractor`);
+      let crewStr = crewArr.length > 0 ? `Total: ${r.total} (${crewArr.join(', ')})` : 'No crew logged';
+
+      lines.push([
+        dstr,
+        r.label,
+        r.activity || 'No activity',
+        crewStr,
+        r.notes || ''
+      ]);
+    });
+    const csv=lines.map(l=>l.map(csvEsc).join(',')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=url; a.download='269-ARD_report_'+dstr+'.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+
+  document.getElementById('prevMon').onclick=()=>{ viewMonth--; if(viewMonth<0){viewMonth=11;viewYear--;} renderCal(); };
+  document.getElementById('nextMon').onclick=()=>{ viewMonth++; if(viewMonth>11){viewMonth=0;viewYear++;} renderCal(); };
+  document.getElementById('logoutBtn').onclick=doLogout;
+  updateThemeBtn(); { const tb=document.getElementById('themeBtn'); if(tb) tb.onclick=toggleTheme; }
+
+  requireNonGuest(async (user, role)=>{
+    currentUser=user;
+    document.getElementById('userChip').textContent = user.email + ' · ' + role;
+    const now=new Date(); viewYear=now.getFullYear(); viewMonth=now.getMonth();
+    await refreshDates();
+  });
+</script>
+</body>
+</html>

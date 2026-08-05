@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Look-Ahead — 269-ARD</title>
+<link rel="stylesheet" href="css/aurora.css">
+<style>
+  .app{grid-template-rows:auto auto 1fr;}
+  .subbar{display:flex;align-items:center;gap:12px;padding:2px 4px;}
+  .rangeswitch{display:inline-flex;background:var(--glass);border:1px solid var(--glass-line);border-radius:12px;padding:3px;backdrop-filter:blur(20px);}
+  .rangeswitch button{border:none;background:transparent;color:var(--dim);font-family:'Inter',sans-serif;font-weight:600;font-size:13px;padding:8px 18px;border-radius:9px;cursor:pointer;transition:.25s;}
+  .rangeswitch button.on{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;box-shadow:0 4px 14px rgba(124,92,255,.35);}
+  .rangeinfo{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--dim);}
+  .rangeinfo b{color:var(--ink);}
+
+  .content{overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:4px;}
+  .section{padding:16px 18px;}
+  .sec-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .sec-head .dot{width:11px;height:11px;border-radius:3px;}
+  .sec-head.scaff .dot{background:var(--scaff);box-shadow:0 0 12px var(--scaff);}
+  .sec-head.asb .dot{background:var(--asb);box-shadow:0 0 12px var(--asb);}
+  .sec-head h2{font-family:'Sora',sans-serif;font-size:16px;font-weight:600;}
+  .sec-head .count{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--dim);margin-left:2px;}
+  .sec-head .legend{margin-left:auto;display:flex;gap:14px;font-size:11px;color:var(--dim);}
+  .sec-head .legend span{display:flex;align-items:center;gap:5px;}
+  .sec-head .legend i{width:9px;height:9px;border-radius:2px;display:inline-block;}
+
+  /* GANTT */
+  .gantt{overflow-x:auto;padding-bottom:6px;margin-bottom:14px;}
+  .gantt-inner{position:relative;min-width:760px;}
+  .gantt-axis{position:relative;height:22px;border-bottom:1px solid var(--glass-line);margin-bottom:8px;}
+  .gantt-tick{position:absolute;top:0;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--dim);border-left:1px solid var(--glass-line);padding-left:4px;height:26px;}
+  .gantt-tick.wk{border-left-color:var(--acc);}
+  .grow{position:relative;height:26px;margin-bottom:4px;display:flex;align-items:center;}
+  .grow .glabel{position:absolute;left:0;font-size:11px;color:var(--ink);white-space:nowrap;z-index:3;max-width:190px;overflow:hidden;text-overflow:ellipsis;background:linear-gradient(90deg,var(--bg) 70%,transparent);padding-right:8px;}
+  .gbar{position:absolute;height:18px;border-radius:5px;top:4px;display:flex;align-items:center;padding:0 7px;font-size:10px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.25);opacity:0;transform:scaleX(.6);transform-origin:left;animation:growbar .5s forwards;}
+  @keyframes growbar{to{opacity:1;transform:scaleX(1);}}
+  .gbar.scaff{background:linear-gradient(90deg,var(--scaff),#0284c7);}
+  .gbar.asb{background:linear-gradient(90deg,var(--asb),#9333ea);}
+  .gbar.done{opacity:.5;filter:grayscale(.4);}
+  .gbar .pfill{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.28);border-radius:5px 0 0 5px;}
+  .gantt-today{position:absolute;top:0;bottom:0;width:2px;background:var(--demo);z-index:4;box-shadow:0 0 8px var(--demo);}
+  .gantt-today .tlabel{position:absolute;top:-4px;left:4px;font-size:9px;color:var(--demo);font-family:'JetBrains Mono',monospace;font-weight:600;}
+
+  /* TABLE */
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{text-align:left;color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;padding:8px 8px;border-bottom:1px solid var(--glass-line);}
+  td{padding:9px 8px;border-bottom:1px solid var(--glass-2);vertical-align:middle;}
+  tr:hover td{background:var(--glass-2);}
+  td.struct{font-weight:600;}
+  td.dt{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);}
+  .pbar{width:70px;height:6px;background:var(--glass-line);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:8px;}
+  .pbar span{display:block;height:100%;border-radius:3px;}
+  .pbar.scaff span{background:linear-gradient(90deg,var(--scaff),#0284c7);}
+  .pbar.asb span{background:linear-gradient(90deg,var(--asb),#9333ea);}
+  .pct{font-family:'JetBrains Mono',monospace;font-size:11px;}
+  .empty{color:var(--dim);text-align:center;padding:30px;font-size:13px;}
+  .stat-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;}
+  .stat-tag.live{background:rgba(52,211,153,.15);color:var(--live);}
+  .stat-tag.done{background:rgba(91,107,126,.15);color:var(--done);}
+  .stat-tag.upcoming{background:rgba(96,165,250,.15);color:var(--sched);}
+</style>
+</head>
+<body>
+<div class="aurora"><span class="a1"></span><span class="a2"></span></div>
+<div class="boot"><div class="logo"></div><div class="txt">Loading schedule…</div></div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><div class="logo"></div><div><h1>269-ARD Look-Ahead</h1><div class="s">Scaffolding &amp; Asbestos scheduled work</div></div></div>
+    <nav class="nav">
+      <a href="index.html">Live Board</a>
+      <a href="lookahead.html" class="active">Look-Ahead</a>
+      <a href="reports.html" id="reportsLink">Reports</a>
+    </nav>
+    <span class="spacer"></span>
+    <div class="clock"><div class="t" id="ct">--:--:--</div><div class="d" id="cd">—</div></div>
+    <button class="theme-btn" id="themeBtn" title="Toggle day/night">☀</button>
+    <span class="userchip" id="userChip">…</span>
+    <button class="btn logout" id="logoutBtn">Sign out</button>
+  </div>
+
+  <div class="subbar">
+    <div class="rangeswitch">
+      <button data-days="7" class="on">1 Week</button>
+      <button data-days="30">1 Month</button>
+      <button data-days="42">6 Weeks</button>
+    </div>
+    <div class="rangeinfo" id="rangeInfo">—</div>
+  </div>
+
+  <div class="content" id="content">
+    <div class="card section"><div class="empty">Loading…</div></div>
+  </div>
+</div>
+
+<script type="module">
+import { requireAuth, doLogout } from "./js/app-common.js";
+import { initTheme, toggleTheme, startClock, todayISO, addDaysISO, fmtDMY, fmtDayDMY, daysBetween, buildLookahead } from "./js/ui-common.js";
+
+let SCHEDULE={};
+let rangeDays=7;
+
+initTheme();
+document.getElementById('themeBtn').onclick=()=>{ toggleTheme(); render(); };
+document.getElementById('logoutBtn').onclick=doLogout;
+startClock(document.getElementById('ct'), document.getElementById('cd'));
+
+document.querySelectorAll('.rangeswitch button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.rangeswitch button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); rangeDays=+b.dataset.days; render();
+  };
+});
+
+function ganttHTML(items, cls, fromISO, toISO){
+  if(items.length===0) return '<div class="empty">No '+cls+' activities in this window.</div>';
+  const total=Math.max(daysBetween(fromISO,toISO),1);
+  const pxPerDay=Math.max(9, Math.min(26, 720/total));
+  const labelW=195;
+  const today=todayISO();
+  let ticks='';
+  // weekly ticks
+  for(let i=0;i<=total;i+=7){
+    const dISO=addDaysISO(fromISO,i);
+    ticks+='<div class="gantt-tick wk" style="left:'+(labelW+i*pxPerDay)+'px">'+fmtDMY(dISO)+'</div>';
+  }
+  let rows='';
+  items.forEach((it,idx)=>{
+    const off=Math.max(0,daysBetween(fromISO,it.s));
+    const rawLen=daysBetween(it.s,it.f)||1;
+    const visLen=Math.min(rawLen, total-off);
+    const left=labelW+off*pxPerDay;
+    const w=Math.max(visLen*pxPerDay,10);
+    const done=it.status==='done';
+    rows+='<div class="grow">'+
+      '<div class="glabel">'+it.structure+' · '+it.activity+'</div>'+
+      '<div class="gbar '+cls+(done?' done':'')+'" style="left:'+left+'px;width:'+w+'px;animation-delay:'+(idx*30)+'ms">'+
+        (it.p>0&&it.p<100?'<div class="pfill" style="width:'+it.p+'%"></div>':'')+
+        '<span style="position:relative;z-index:2">'+(w>60?it.activity:'')+'</span>'+
+      '</div></div>';
+  });
+  const todayOff=daysBetween(fromISO,today);
+  let todayLine='';
+  if(todayOff>=0&&todayOff<=total){
+    todayLine='<div class="gantt-today" style="left:'+(labelW+todayOff*pxPerDay)+'px"><span class="tlabel">TODAY</span></div>';
+  }
+  const width=labelW+total*pxPerDay+30;
+  return '<div class="gantt"><div class="gantt-inner" style="width:'+width+'px">'+
+    '<div class="gantt-axis" style="margin-left:0">'+ticks+'</div>'+todayLine+rows+'</div></div>';
+}
+
+function tableHTML(items, cls){
+  if(items.length===0) return '';
+  let rows='';
+  items.forEach(it=>{
+    rows+='<tr>'+
+      '<td class="struct">'+it.structure+'</td>'+
+      '<td>'+it.activity+'</td>'+
+      '<td class="dt">'+fmtDayDMY(it.s)+'</td>'+
+      '<td class="dt">'+fmtDayDMY(it.f)+'</td>'+
+      '<td><span class="pbar '+cls+'"><span style="width:'+it.p+'%"></span></span><span class="pct">'+it.p+'%</span></td>'+
+      '<td><span class="stat-tag '+it.status+'">'+it.status.toUpperCase()+'</span></td>'+
+    '</tr>';
+  });
+  return '<table><thead><tr><th>Structure</th><th>Activity</th><th>Start</th><th>Finish</th><th>Progress</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function sectionHTML(title, cls, dotcls, items, fromISO, toISO){
+  const legend='<div class="legend">'+
+    '<span><i style="background:var(--live)"></i>Live</i></span>'+
+    '<span><i style="background:var(--sched)"></i>Upcoming</span>'+
+    '<span><i style="background:var(--done)"></i>Done</span></div>';
+  return '<div class="card section">'+
+    '<div class="sec-head '+dotcls+'"><span class="dot"></span><h2>'+title+'</h2>'+
+      '<span class="count">'+items.length+' activities</span>'+legend+'</div>'+
+    ganttHTML(items, cls, fromISO, toISO)+
+    tableHTML(items, cls)+
+  '</div>';
+}
+
+function render(){
+  const from=todayISO();
+  const to=addDaysISO(from, rangeDays);
+  const data=buildLookahead(SCHEDULE, from, to);
+  document.getElementById('rangeInfo').innerHTML='Window: <b>'+fmtDMY(from)+'</b> → <b>'+fmtDMY(to)+'</b> · '+rangeDays+' days';
+  const c=document.getElementById('content');
+  c.innerHTML =
+    sectionHTML('Scaffolding', 'scaff', 'scaff', data.scaffolding, from, to)+
+    sectionHTML('Asbestos Removal', 'asb', 'asb', data.asbestos, from, to);
+}
+
+async function loadSchedule(){
+  SCHEDULE = await fetch('assets/schedule.json').then(r=>r.json());
+}
+
+async function init(){
+  await loadSchedule();
+  requireAuth((user, role)=>{
+    document.getElementById('userChip').textContent = (user.isAnonymous ? 'Guest' : user.email) + ' · ' + role;
+    if(role === 'guest'){ const rl=document.getElementById('reportsLink'); if(rl) rl.style.display='none'; }
+    render();
+  });
+}
+init();
+</script>
+</body>
+</html>
