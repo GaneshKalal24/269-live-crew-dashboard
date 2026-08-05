@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Activities — 269-ARD</title>
+<link rel="stylesheet" href="css/aurora.css">
+<style>
+  .app{grid-template-rows:auto auto 1fr;}
+  .subbar{display:flex;align-items:center;gap:12px;padding:2px 4px;flex-wrap:wrap;}
+  .datepick{display:flex;align-items:center;gap:8px;background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:6px 10px;backdrop-filter:blur(20px);}
+  .datepick input{background:var(--glass-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 9px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+  .datepick button{background:var(--glass-2);border:1px solid var(--line);color:var(--text);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:15px;}
+  .datepick button:hover{background:var(--glass-hi);}
+  .daylabel{font-family:'Sora',sans-serif;font-size:15px;font-weight:600;}
+  .totalchip{margin-left:auto;display:flex;align-items:center;gap:10px;background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:8px 16px;backdrop-filter:blur(20px);}
+  .totalchip .n{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;color:var(--acc2);}
+  .totalchip .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+
+  .content{overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:4px;}
+  .catcard{padding:16px 18px;}
+  .cathead{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .cathead .dot{width:11px;height:11px;border-radius:3px;}
+  .cathead h2{font-family:'Sora',sans-serif;font-size:15px;font-weight:600;}
+  .cathead .sub{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-left:auto;}
+  .cat-asb .dot{background:var(--asb);box-shadow:0 0 10px var(--asb);}
+  .cat-demo .dot{background:var(--demo);box-shadow:0 0 10px var(--demo);}
+  .cat-scaff .dot{background:var(--scaff);box-shadow:0 0 10px var(--scaff);}
+  .cat-site .dot{background:var(--acc2);box-shadow:0 0 10px var(--acc2);}
+
+  table.dt{width:100%;border-collapse:collapse;font-size:13px;}
+  table.dt th{text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.4px;padding:6px 8px;border-bottom:1px solid var(--line);font-weight:700;}
+  table.dt td{padding:5px 8px;border-bottom:1px solid var(--glass-2);vertical-align:middle;}
+  table.dt input{width:100%;background:var(--glass-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:7px 9px;font-family:'Inter',sans-serif;font-size:13px;}
+  table.dt input:focus{outline:none;border-color:var(--acc2);}
+  table.dt input.num{text-align:center;font-family:'JetBrains Mono',monospace;}
+  .col-name{width:26%;} .col-count{width:80px;} .col-hours{width:80px;} .col-note{width:auto;} .col-del{width:36px;}
+  .row-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;}
+  .row-del:hover{color:var(--red);}
+  .addrow{margin-top:8px;background:var(--glass-2);border:1px dashed var(--line);color:var(--acc2);border-radius:9px;padding:8px 12px;cursor:pointer;font-size:12.5px;font-weight:600;font-family:'Inter',sans-serif;transition:.2s;}
+  .addrow:hover{background:var(--glass-hi);border-color:var(--acc2);}
+  .empty-cat{color:var(--muted);font-size:12.5px;padding:6px 2px;}
+  .readonly-banner{background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.25);color:var(--acc2);font-size:12px;text-align:center;padding:9px;border-radius:10px;margin-bottom:4px;}
+  .saved-flash{font-size:11px;color:var(--live);opacity:0;transition:opacity .3s;}
+  .saved-flash.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="aurora"><span class="a1"></span><span class="a2"></span></div>
+<div class="boot"><div class="logo"></div><div class="txt">Loading daily activities…</div></div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><div class="logo"></div><div><h1>269-ARD Daily Activities</h1><div class="s">General crew &amp; plant not tied to a structure</div></div></div>
+    <nav class="nav">
+      <a href="index.html">Asbestos Board</a>
+      <a href="demo.html">Demo Board</a>
+      <a href="daily.html" class="active">Daily Activities</a>
+      <a href="lookahead.html">Look-Ahead</a>
+      <a href="overview.html">Overview</a>
+      <a href="reports.html" id="reportsLink">Reports</a>
+    </nav>
+    <span class="spacer"></span>
+    <div class="clock"><div class="t" id="ct">--:--:--</div><div class="d" id="cd">—</div></div>
+    <button class="theme-btn" id="themeBtn" title="Toggle day/night">☀</button>
+    <span class="userchip" id="userChip">…</span>
+    <button class="btn logout" id="logoutBtn">Sign out</button>
+  </div>
+
+  <div class="subbar">
+    <div class="datepick">
+      <button id="prevDay" title="Previous day">‹</button>
+      <input type="date" id="dateInput">
+      <button id="nextDay" title="Next day">›</button>
+    </div>
+    <span class="daylabel" id="dayLabel">—</span>
+    <span class="saved-flash" id="savedFlash">✓ Saved</span>
+    <div class="totalchip"><span class="n" id="totalPeople">0</span><span class="l">People logged today</span></div>
+  </div>
+
+  <div class="content" id="content">
+    <div class="catcard card"><div class="empty-cat">Loading…</div></div>
+  </div>
+</div>
+
+<script type="module">
+import { requireAuth, doLogout, loadDaily, watchDaily, saveDaily, canEdit } from "./js/app-common.js";
+import { initTheme, toggleTheme, startClock, todayISO, addDaysISO, fmtDMY, fmtDayDMY } from "./js/ui-common.js";
+
+const CATS=[
+  {key:'asbestos', label:'Asbestos', cls:'cat-asb'},
+  {key:'demolition', label:'Demolition', cls:'cat-demo'},
+  {key:'scaffolding', label:'Scaffolding', cls:'cat-scaff'},
+  {key:'sitewide', label:'Site-wide', cls:'cat-site'},
+];
+
+let curDate=todayISO();
+let entries=[];       // [{cat,name,count,hours,note}]
+let CAN_EDIT=false;
+let CURRENT_USER=null;
+let unsub=null;
+
+initTheme();
+document.getElementById('themeBtn').onclick=()=>{ toggleTheme(); };
+document.getElementById('logoutBtn').onclick=doLogout;
+startClock(document.getElementById('ct'), document.getElementById('cd'));
+
+const dateInput=document.getElementById('dateInput');
+dateInput.addEventListener('change',()=>{ curDate=dateInput.value; subscribe(); });
+document.getElementById('prevDay').onclick=()=>{ curDate=addDaysISO(curDate,-1); dateInput.value=curDate; subscribe(); };
+document.getElementById('nextDay').onclick=()=>{ curDate=addDaysISO(curDate,1); dateInput.value=curDate; subscribe(); };
+
+function totalPeople(){ return entries.reduce((s,e)=>s+(Number(e.count)||0),0); }
+
+function render(){
+  document.getElementById('dayLabel').textContent=fmtDayDMY(curDate)+'/'+curDate.slice(0,4).slice(2);
+  document.getElementById('totalPeople').textContent=totalPeople();
+  const c=document.getElementById('content');
+  let html='';
+  if(!CAN_EDIT) html+='<div class="readonly-banner">👁 View-only — sign in as an editor to add or change daily activities.</div>';
+  CATS.forEach(cat=>{
+    const rows=entries.map((e,i)=>({e,i})).filter(x=>x.e.cat===cat.key);
+    const catCount=rows.reduce((s,x)=>s+(Number(x.e.count)||0),0);
+    html+='<div class="catcard card">'+
+      '<div class="cathead '+cat.cls+'"><span class="dot"></span><h2>'+cat.label+'</h2>'+
+      '<span class="sub">'+catCount+' people · '+rows.length+' entries</span></div>';
+    if(rows.length||CAN_EDIT){
+      html+='<table class="dt"><thead><tr><th class="col-name">Activity / Resource</th><th class="col-count">People</th><th class="col-hours">Hours</th><th class="col-note">Note / Area</th>'+(CAN_EDIT?'<th class="col-del"></th>':'')+'</tr></thead><tbody>';
+      if(rows.length===0){ html+='<tr><td colspan="5" class="empty-cat">No entries yet.</td></tr>'; }
+      rows.forEach(({e,i})=>{
+        if(CAN_EDIT){
+          html+='<tr>'+
+            '<td><input data-i="'+i+'" data-f="name" value="'+esc(e.name)+'" placeholder="e.g. Telehandler, Moxy, Blending crew"></td>'+
+            '<td><input class="num" data-i="'+i+'" data-f="count" type="number" min="0" value="'+esc(e.count)+'"></td>'+
+            '<td><input class="num" data-i="'+i+'" data-f="hours" type="number" min="0" step="0.5" value="'+esc(e.hours)+'"></td>'+
+            '<td><input data-i="'+i+'" data-f="note" value="'+esc(e.note)+'" placeholder="area / detail"></td>'+
+            '<td><button class="row-del" data-del="'+i+'">&times;</button></td>'+
+          '</tr>';
+        } else {
+          html+='<tr>'+
+            '<td>'+esc(e.name)+'</td><td class="num" style="text-align:center;font-family:monospace">'+esc(e.count)+'</td>'+
+            '<td class="num" style="text-align:center;font-family:monospace">'+(e.hours?esc(e.hours)+'h':'—')+'</td>'+
+            '<td style="color:var(--muted)">'+esc(e.note)+'</td>'+
+          '</tr>';
+        }
+      });
+      html+='</tbody></table>';
+      if(CAN_EDIT) html+='<button class="addrow" data-add="'+cat.key+'">+ Add '+cat.label.toLowerCase()+' entry</button>';
+    } else {
+      html+='<div class="empty-cat">No entries.</div>';
+    }
+    html+='</div>';
+  });
+  c.innerHTML=html;
+  if(CAN_EDIT) wire();
+}
+
+function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function wire(){
+  document.querySelectorAll('#content input').forEach(inp=>{
+    inp.addEventListener('change',(e)=>{
+      const i=+e.target.dataset.i, f=e.target.dataset.f;
+      if(entries[i]){ entries[i][f]=e.target.value; persist(); if(f==='count') render(); }
+    });
+  });
+  document.querySelectorAll('[data-add]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ entries.push({cat:btn.dataset.add,name:'',count:'',hours:'',note:''}); persist(); render(); });
+  });
+  document.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ entries.splice(+btn.dataset.del,1); persist(); render(); });
+  });
+}
+
+let _t=null;
+function persist(){
+  clearTimeout(_t);
+  _t=setTimeout(async()=>{
+    try{
+      // strip fully-empty rows before saving
+      const clean=entries.filter(e=>e.name||e.count||e.hours||e.note);
+      await saveDaily(curDate, clean, CURRENT_USER);
+      flashSaved();
+    }catch(err){ console.error('save daily failed',err); }
+  },500);
+}
+function flashSaved(){ const f=document.getElementById('savedFlash'); f.classList.add('show'); setTimeout(()=>f.classList.remove('show'),1200); }
+
+function subscribe(){
+  if(unsub){ try{unsub();}catch(e){} unsub=null; }
+  document.getElementById('dayLabel').textContent=fmtDMY(curDate);
+  try{
+    unsub=watchDaily(curDate,(data)=>{ entries=(data&&data.entries)?data.entries:[]; render(); });
+  }catch(e){
+    console.error('watchDaily failed, loading once',e);
+    loadDaily(curDate).then(d=>{ entries=d.entries||[]; render(); });
+  }
+}
+
+async function init(){
+  requireAuth((user, role)=>{
+    CURRENT_USER=user; CAN_EDIT=canEdit(role);
+    document.getElementById('userChip').textContent=(user.isAnonymous?'Guest':user.email)+' · '+role;
+    if(role==='guest'){ const rl=document.getElementById('reportsLink'); if(rl) rl.style.display='none'; }
+    dateInput.value=curDate;
+    subscribe();
+  });
+}
+init();
+</script>
+</body>
+</html>

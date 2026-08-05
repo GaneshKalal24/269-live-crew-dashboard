@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Overview — 269-ARD</title>
+<link rel="stylesheet" href="css/aurora.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  .app{grid-template-rows:auto 1fr;}
+  .content{overflow-y:auto;padding-right:6px;display:flex;flex-direction:column;gap:14px;}
+
+  /* hero */
+  .hero{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center;padding:26px 30px;position:relative;overflow:hidden;}
+  .hero::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,rgba(124,92,255,.15),transparent 60%);pointer-events:none;}
+  .hero-ring{position:relative;width:180px;height:180px;flex-shrink:0;}
+  .hero-ring svg{transform:rotate(-90deg);}
+  .hero-ring circle{fill:none;stroke-width:14;stroke-linecap:round;}
+  .hero-ring .bg{stroke:var(--glass-2);}
+  .hero-ring .fg{stroke:url(#hg);stroke-dasharray:471;stroke-dashoffset:471;animation:ringdraw 2s .3s cubic-bezier(.2,.9,.25,1) forwards;filter:drop-shadow(0 0 10px rgba(124,92,255,.5));}
+  @keyframes ringdraw{to{stroke-dashoffset:var(--off);}}
+  .hero-ring .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .hero-ring .center .big{font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:600;line-height:1;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .hero-ring .center .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px;}
+  .hero-info h1{font-family:'Sora',sans-serif;font-size:26px;font-weight:700;line-height:1.1;margin-bottom:6px;}
+  .hero-info .meta{color:var(--muted);font-size:13px;font-family:'JetBrains Mono',monospace;margin-bottom:16px;}
+  .hero-stats{display:flex;gap:26px;}
+  .hero-stats .hs .v{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;}
+  .hero-stats .hs .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+  .hero-stats .hs.live .v{color:var(--live);} .hero-stats .hs.done .v{color:var(--acc2);} .hero-stats .hs.total .v{color:var(--ink);}
+  .timeline{margin-top:16px;}
+  .timeline .bar{height:8px;background:var(--glass-2);border-radius:5px;position:relative;overflow:hidden;}
+  .timeline .bar .fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:5px;width:0;animation:tlfill 1.8s .5s ease forwards;}
+  .timeline .ends{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:5px;font-family:'JetBrains Mono',monospace;}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .panelcard{padding:18px 20px;}
+  .panelcard h3{font-family:'Sora',sans-serif;font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .panelcard h3 .d{width:9px;height:9px;border-radius:3px;}
+
+  /* discipline rings */
+  .disc-ring{text-align:center;}
+  .disc-ring .rw{position:relative;width:120px;height:120px;margin:0 auto;}
+  .disc-ring svg{transform:rotate(-90deg);}
+  .disc-ring circle{fill:none;stroke-width:11;stroke-linecap:round;}
+  .disc-ring .bg{stroke:var(--glass-2);}
+  .disc-ring .center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:600;}
+  .disc-ring .name{margin-top:8px;font-size:13px;font-weight:600;}
+  .disc-ring .sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+  /* progress bars list */
+  .prow{margin-bottom:12px;}
+  .prow:last-child{margin-bottom:0;}
+  .prow .top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;}
+  .prow .top .nm{font-weight:500;}
+  .prow .top .pc{font-family:'JetBrains Mono',monospace;color:var(--muted);}
+  .prow .track{height:7px;background:var(--glass-2);border-radius:4px;overflow:hidden;}
+  .prow .track span{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--acc),var(--acc2));width:0;transition:width 1.2s cubic-bezier(.2,.9,.25,1);}
+
+  /* heatmap */
+  .heat{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:7px;}
+  .hcell{border-radius:8px;padding:9px 10px;border:1px solid var(--glass-line);position:relative;overflow:hidden;min-height:54px;display:flex;flex-direction:column;justify-content:space-between;transition:transform .2s;}
+  .hcell:hover{transform:translateY(-2px);}
+  .hcell .hn{font-size:10px;font-weight:600;line-height:1.2;position:relative;z-index:2;}
+  .hcell .hp{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;position:relative;z-index:2;}
+  .hcell .hbg{position:absolute;left:0;bottom:0;right:0;background:linear-gradient(0deg,rgba(52,211,153,.35),rgba(52,211,153,.05));z-index:1;}
+
+  .chart-wrap{position:relative;height:240px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:1100px){.grid3{grid-template-columns:1fr;}.grid2,.two-col{grid-template-columns:1fr;}}
+
+  .liveflag{margin-left:auto;font-size:11px;color:var(--live);display:flex;align-items:center;gap:6px;}
+  .liveflag::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--live);box-shadow:0 0 8px var(--live);animation:pulse2 1.5s infinite;}
+  @keyframes pulse2{50%{opacity:.4;}}
+</style>
+</head>
+<body>
+<div class="aurora"><span class="a1"></span><span class="a2"></span></div>
+<div class="boot"><div class="logo"></div><div class="txt">Building project overview…</div></div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><div class="logo"></div><div><h1>269-ARD Project Overview</h1><div class="s">Altona Refinery Demolition — Live Progress</div></div></div>
+    <nav class="nav">
+      <a href="index.html">Asbestos Board</a>
+      <a href="demo.html">Demo Board</a>
+      <a href="daily.html">Daily Activities</a>
+      <a href="lookahead.html">Look-Ahead</a>
+      <a href="overview.html" class="active">Overview</a>
+      <a href="reports.html" id="reportsLink">Reports</a>
+    </nav>
+    <span class="spacer"></span>
+    <div class="clock"><div class="t" id="ct">--:--:--</div><div class="d" id="cd">—</div></div>
+    <button class="theme-btn" id="themeBtn" title="Toggle day/night">☀</button>
+    <span class="userchip" id="userChip">…</span>
+    <button class="btn logout" id="logoutBtn">Sign out</button>
+  </div>
+
+  <div class="content" id="content">
+    <div class="card panelcard"><div style="text-align:center;color:var(--muted);padding:40px;">Loading…</div></div>
+  </div>
+</div>
+
+<script type="module">
+import { requireAuth, doLogout, loadLive, watchLive, loadDemoLive, watchDemoLive } from "./js/app-common.js";
+import { initTheme, toggleTheme, startClock, fmtDMY, todayISO } from "./js/ui-common.js";
+
+let OV={};
+// Base data (from static files) + live edits (from Firebase), merged at compute time.
+let BASE_SCHEDULE={}, DEMO_BASE={}, FULL=[];
+let scheduleEdits={}, demoScheduleEdits={};
+
+const SCAFF_ACTS=new Set(['Erect Scaffold','Shrink Wrap','Dismantle Scaffold']);
+const ASB_ACTS=new Set(['Flooring Encapsulation','Smoke Test','Remove Asbestos','Clearance + Remove Encapsulation','Clearance','Remove Construction Joints - Asbestos']);
+
+function mergedSchedule(){
+  const out={}; const keys=new Set([...Object.keys(BASE_SCHEDULE),...Object.keys(scheduleEdits)]);
+  keys.forEach(k=>{ out[k]=scheduleEdits[k]?scheduleEdits[k]:BASE_SCHEDULE[k]; });
+  return out;
+}
+function mergedDemo(){
+  const out={}; const keys=new Set([...Object.keys(DEMO_BASE),...Object.keys(demoScheduleEdits)]);
+  keys.forEach(k=>{ out[k]=demoScheduleEdits[k]?demoScheduleEdits[k]:DEMO_BASE[k]; });
+  return out;
+}
+function pctOf(acts){ if(!acts||!acts.length)return 0; return Math.round(acts.reduce((s,a)=>s+(Number(a.p)||0),0)/acts.length); }
+
+// Recompute the entire OV object from current base + live edits.
+function computeOV(){
+  const sched=mergedSchedule(), demo=mergedDemo();
+  const scaff=[], asb=[];
+  for(const acts of Object.values(sched)) for(const a of acts){
+    if(SCAFF_ACTS.has(a.a)) scaff.push(a); else if(ASB_ACTS.has(a.a)) asb.push(a);
+  }
+  const demoActs=[]; for(const acts of Object.values(demo)) for(const a of acts) demoActs.push(a);
+
+  // overall project % = weighted avg across all tracked activities (asbestos+scaffold+demo)
+  const allTracked=[...scaff,...asb,...demoActs];
+  const overallPct = allTracked.length ? Math.round(allTracked.reduce((s,a)=>s+(Number(a.p)||0),0)/allTracked.length) : 0;
+
+  // stats
+  const done=allTracked.filter(a=>(Number(a.p)||0)>=100).length;
+  const live=allTracked.filter(a=>{const p=Number(a.p)||0;return p>0&&p<100;}).length;
+
+  // sections from full schedule (static baseline — high-level phases)
+  const sections=FULL.filter(r=>r.level===1).map(r=>({name:r.name.trim(),pct:r.pct,start:r.start,finish:r.finish}));
+
+  OV={
+    project:{ name:'269-ARD Altona Refinery Demolition', start:'2025-08-04', finish:'2027-04-23', pct: overallPct },
+    disciplines:[
+      {name:'Scaffolding',pct:pctOf(scaff),count:scaff.length,done:scaff.filter(a=>(Number(a.p)||0)>=100).length},
+      {name:'Asbestos Removal',pct:pctOf(asb),count:asb.length,done:asb.filter(a=>(Number(a.p)||0)>=100).length},
+      {name:'Demolition',pct:pctOf(demoActs),count:demoActs.length,done:demoActs.filter(a=>(Number(a.p)||0)>=100).length},
+    ],
+    sections,
+    demoAreas: Object.entries(demo).map(([k,v])=>({name:k,pct:pctOf(v)})).sort((a,b)=>b.pct-a.pct),
+    burners: Object.entries(sched).map(([k,v])=>({name:k,pct:pctOf(v)})).sort((a,b)=>b.pct-a.pct),
+    stats:{ totalActs:allTracked.length, done, live }
+  };
+}
+initTheme();
+document.getElementById('themeBtn').onclick=()=>{ toggleTheme(); if(OV.project) draw(); };
+// re-draw charts on theme change handled in draw()
+document.getElementById('logoutBtn').onclick=doLogout;
+startClock(document.getElementById('ct'), document.getElementById('cd'));
+
+let charts=[];
+function destroyCharts(){ charts.forEach(c=>{try{c.destroy();}catch(e){}}); charts=[]; }
+
+function heatColor(p){
+  // red(0) -> amber(50) -> green(100)
+  if(p>=100) return 'rgba(52,211,153,.9)';
+  if(p>=66) return 'rgba(96,165,250,.7)';
+  if(p>=33) return 'rgba(251,191,36,.6)';
+  if(p>0) return 'rgba(248,113,113,.5)';
+  return 'rgba(120,130,150,.25)';
+}
+
+function draw(){
+  destroyCharts();
+  const p=OV.project;
+  const heroOff = 471 - (471*p.pct/100);
+  const disciplines=OV.disciplines;
+  const c=document.getElementById('content');
+
+  c.innerHTML = `
+  <div class="card hero">
+    <div class="hero-ring">
+      <svg width="180" height="180"><defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7C5CFF"/><stop offset="1" stop-color="#22D3EE"/></linearGradient></defs>
+        <circle class="bg" cx="90" cy="90" r="75"/>
+        <circle class="fg" cx="90" cy="90" r="75" style="--off:${heroOff}"/>
+      </svg>
+      <div class="center"><div class="big" id="heroPct">0</div><div class="lbl">Complete</div></div>
+    </div>
+    <div class="hero-info">
+      <h1>${p.name}</h1>
+      <div class="meta">Project span ${fmtDMY(p.start)} → ${fmtDMY(p.finish)}</div>
+      <div class="hero-stats">
+        <div class="hs total"><div class="v" data-c="${OV.stats.totalActs}">0</div><div class="l">Total activities</div></div>
+        <div class="hs done"><div class="v" data-c="${OV.stats.done}">0</div><div class="l">Completed</div></div>
+        <div class="hs live"><div class="v" data-c="${OV.stats.live}">0</div><div class="l">In progress</div></div>
+      </div>
+      <div class="timeline">
+        <div class="bar"><div class="fill" style="--w:${timePct(p)}%"></div></div>
+        <div class="ends"><span>${fmtDMY(p.start)}</span><span id="todayMark">Today</span><span>${fmtDMY(p.finish)}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid3">
+    ${disciplines.map((d,i)=>{
+      const off=339 - (339*d.pct/100);
+      const col=['#38BDF8','#C084FC','#F87171'][i];
+      return `<div class="card panelcard disc-ring">
+        <div class="rw"><svg width="120" height="120">
+          <circle class="bg" cx="60" cy="60" r="54"/>
+          <circle cx="60" cy="60" r="54" style="stroke:${col};stroke-dasharray:339;stroke-dashoffset:339;animation:ringdraw 1.6s ${0.4+i*0.15}s ease forwards;--off:${off};filter:drop-shadow(0 0 6px ${col}88);"/>
+        </svg><div class="center" style="color:${col}">${d.pct}%</div></div>
+        <div class="name">${d.name}</div>
+        <div class="sub">${d.done} of ${d.count} activities done</div>
+      </div>`;
+    }).join('')}
+  </div>
+
+  <div class="grid2">
+    <div class="card panelcard">
+      <h3><span class="d" style="background:var(--acc)"></span>Project Sections</h3>
+      ${OV.sections.map(s=>`<div class="prow"><div class="top"><span class="nm">${s.name}</span><span class="pc">${s.pct}%</span></div><div class="track"><span data-w="${s.pct}"></span></div></div>`).join('')}
+    </div>
+    <div class="card panelcard">
+      <h3><span class="d" style="background:var(--acc2)"></span>Discipline Comparison</h3>
+      <div class="chart-wrap"><canvas id="discChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card panelcard">
+    <h3><span class="d" style="background:var(--demo)"></span>Demolition Areas — Completion Heatmap <span class="liveflag">Live</span></h3>
+    <div class="heat">
+      ${OV.demoAreas.map(a=>`<div class="hcell"><div class="hbg" style="height:${a.pct}%;background:linear-gradient(0deg,${heatColor(a.pct)},transparent)"></div><div class="hn">${a.name}</div><div class="hp">${a.pct}%</div></div>`).join('')}
+    </div>
+  </div>
+
+  <div class="card panelcard">
+    <h3><span class="d" style="background:var(--asb)"></span>Burner & Column Structures — Progress</h3>
+    <div class="chart-wrap" style="height:${Math.max(240, OV.burners.length*22)}px"><canvas id="burnChart"></canvas></div>
+  </div>
+  `;
+
+  // animate hero number
+  animateNum(document.getElementById('heroPct'), p.pct, 1600, '%');
+  document.querySelectorAll('.hs .v[data-c]').forEach(el=>animateNum(el, +el.dataset.c, 1400,''));
+  // animate section bars + timeline + heat after paint
+  requestAnimationFrame(()=>{ setTimeout(()=>{
+    document.querySelectorAll('.prow .track span').forEach(s=>s.style.width=s.dataset.w+'%');
+    document.querySelectorAll('.timeline .fill').forEach(f=>f.style.width=f.style.getPropertyValue('--w'));
+  },100); });
+
+  buildDiscChart();
+  buildBurnChart();
+}
+
+function timePct(p){
+  const s=new Date(p.start), f=new Date(p.finish), now=new Date();
+  return Math.max(0,Math.min(100, Math.round((now-s)/(f-s)*100)));
+}
+function animateNum(el,target,dur,suffix){
+  if(!el)return; let start=null;
+  function step(ts){ if(!start)start=ts; const prog=Math.min((ts-start)/dur,1);
+    el.textContent=Math.round(target*prog)+suffix; if(prog<1)requestAnimationFrame(step); }
+  requestAnimationFrame(step);
+}
+
+function themeColors(){
+  const light=document.documentElement.getAttribute('data-theme')==='light';
+  return { grid:light?'rgba(20,30,60,.08)':'rgba(255,255,255,.08)', tick:light?'#5A6478':'#8B93A7' };
+}
+function buildDiscChart(){
+  const ctx=document.getElementById('discChart'); if(!ctx)return;
+  const tc=themeColors();
+  charts.push(new Chart(ctx,{type:'bar',data:{labels:OV.disciplines.map(d=>d.name),
+    datasets:[{label:'% Complete',data:OV.disciplines.map(d=>d.pct),
+      backgroundColor:['#38BDF8','#C084FC','#F87171'],borderRadius:8,barThickness:44}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,max:100,grid:{color:tc.grid},ticks:{color:tc.tick,callback:v=>v+'%'}},
+              x:{grid:{display:false},ticks:{color:tc.tick}}}}}));
+}
+function buildBurnChart(){
+  const ctx=document.getElementById('burnChart'); if(!ctx)return;
+  const tc=themeColors();
+  const data=[...OV.burners].sort((a,b)=>b.pct-a.pct);
+  charts.push(new Chart(ctx,{type:'bar',data:{labels:data.map(b=>b.name),
+    datasets:[{label:'% Complete',data:data.map(b=>b.pct),
+      backgroundColor:data.map(b=>b.pct>=100?'#34D399':b.pct>=50?'#60A5FA':b.pct>0?'#FBBF24':'#5B6B7E'),borderRadius:6}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{beginAtZero:true,max:100,grid:{color:tc.grid},ticks:{color:tc.tick,callback:v=>v+'%'}},
+              y:{grid:{display:false},ticks:{color:tc.tick,font:{size:10}}}}}}));
+}
+
+async function loadBase(){
+  const [s,d,f]=await Promise.all([
+    fetch('assets/schedule.json',{cache:'no-cache'}).then(r=>r.json()),
+    fetch('assets/demo_schedule.json',{cache:'no-cache'}).then(r=>r.json()),
+    fetch('assets/schedule_full.json',{cache:'no-cache'}).then(r=>r.json())
+  ]);
+  BASE_SCHEDULE=s; DEMO_BASE=d; FULL=f;
+}
+
+function refresh(){ computeOV(); draw(); }
+
+async function init(){
+  await loadBase();
+  requireAuth(async (user, role)=>{
+    document.getElementById('userChip').textContent=(user.isAnonymous?'Guest':user.email)+' · '+role;
+    if(role==='guest'){ const rl=document.getElementById('reportsLink'); if(rl) rl.style.display='none'; }
+    // pull live edits from both boards, then render
+    try{ const l=await loadLive(); scheduleEdits=l.scheduleEdits||{}; }catch(e){ console.error('loadLive',e); }
+    try{ const d=await loadDemoLive(); demoScheduleEdits=d.scheduleEdits||{}; }catch(e){ console.error('loadDemoLive',e); }
+    refresh();
+    // live updates: any edit on either board flows straight to the client view
+    try{ watchLive((data)=>{ scheduleEdits=data.scheduleEdits||{}; refresh(); }); }catch(e){ console.error('watchLive',e); }
+    try{ watchDemoLive((data)=>{ demoScheduleEdits=data.scheduleEdits||{}; refresh(); }); }catch(e){ console.error('watchDemoLive',e); }
+  });
+}
+init();
+</script>
+</body>
+</html>

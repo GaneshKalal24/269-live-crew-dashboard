@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Look-Ahead — 269-ARD</title>
+<link rel="stylesheet" href="css/aurora.css">
+<style>
+  .app{grid-template-rows:auto auto 1fr;}
+  .subbar{display:flex;align-items:center;gap:12px;padding:2px 4px;}
+  .rangeswitch{display:inline-flex;background:var(--glass);border:1px solid var(--glass-line);border-radius:12px;padding:3px;backdrop-filter:blur(20px);}
+  .rangeswitch button{border:none;background:transparent;color:var(--dim);font-family:'Inter',sans-serif;font-weight:600;font-size:13px;padding:8px 18px;border-radius:9px;cursor:pointer;transition:.25s;}
+  .rangeswitch button.on{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;box-shadow:0 4px 14px rgba(124,92,255,.35);}
+  .rangeinfo{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--dim);}
+  .rangeinfo b{color:var(--ink);}
+
+  .content{overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:4px;}
+  .section{padding:16px 18px;}
+  .sec-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .sec-head .dot{width:11px;height:11px;border-radius:3px;}
+  .sec-head.scaff .dot{background:var(--scaff);box-shadow:0 0 12px var(--scaff);}
+  .sec-head.asb .dot{background:var(--asb);box-shadow:0 0 12px var(--asb);}
+  .sec-head.demo .dot{background:var(--demo);box-shadow:0 0 12px var(--demo);}
+  .sec-head h2{font-family:'Sora',sans-serif;font-size:16px;font-weight:600;}
+  .sec-head .count{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--dim);margin-left:2px;}
+  .sec-head .legend{margin-left:auto;display:flex;gap:14px;font-size:11px;color:var(--dim);}
+  .sec-head .legend span{display:flex;align-items:center;gap:5px;}
+  .sec-head .legend i{width:9px;height:9px;border-radius:2px;display:inline-block;}
+
+  /* GANTT */
+  .rollup{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .la-date{font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:3px 5px;border-radius:6px;border:1px solid var(--glass-line);background:var(--glass-2);color:var(--ink);}
+  .la-date:focus{outline:none;border-color:var(--acc2);}
+  .la-pct{width:48px;font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:3px 5px;border-radius:6px;border:1px solid var(--glass-line);background:var(--glass-2);color:var(--ink);margin-left:6px;}
+  .la-pct:focus{outline:none;border-color:var(--acc2);}
+  .dm-date{font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:3px 5px;border-radius:6px;border:1px solid var(--glass-line);background:var(--glass-2);color:var(--ink);}
+  .dm-date:focus{outline:none;border-color:var(--demo);}
+  .dm-pct{width:48px;font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:3px 5px;border-radius:6px;border:1px solid var(--glass-line);background:var(--glass-2);color:var(--ink);margin-left:6px;}
+  .dm-pct:focus{outline:none;border-color:var(--demo);}
+  .srchip{display:flex;align-items:center;gap:8px;background:var(--glass-2);border:1px solid var(--glass-line);border-radius:10px;padding:7px 11px;}
+  .srname{font-size:11.5px;font-weight:600;color:var(--ink);}
+  .srbar{width:60px;height:6px;background:var(--glass-line);border-radius:3px;overflow:hidden;}
+  .srbar span{display:block;height:100%;border-radius:3px;}
+  .srbar.scaff span{background:linear-gradient(90deg,var(--scaff),#0284c7);}
+  .srbar.asb span{background:linear-gradient(90deg,var(--asb),#9333ea);}
+  .srpct{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);min-width:32px;text-align:right;}
+  .gantt{overflow-x:auto;padding-bottom:6px;margin-bottom:14px;}
+  .gantt-inner{position:relative;min-width:760px;}
+  .gantt-axis{position:relative;height:22px;border-bottom:1px solid var(--glass-line);margin-bottom:8px;}
+  .gantt-tick{position:absolute;top:0;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--dim);border-left:1px solid var(--glass-line);padding-left:4px;height:26px;}
+  .gantt-tick.wk{border-left-color:var(--acc);}
+  .grow{position:relative;height:26px;margin-bottom:4px;display:flex;align-items:center;}
+  .grow .glabel{position:absolute;left:0;font-size:11px;color:var(--ink);white-space:nowrap;z-index:3;max-width:190px;overflow:hidden;text-overflow:ellipsis;background:linear-gradient(90deg,var(--bg) 70%,transparent);padding-right:8px;}
+  .gbar{position:absolute;height:18px;border-radius:5px;top:4px;display:flex;align-items:center;padding:0 7px;font-size:10px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.25);opacity:0;transform:scaleX(.6);transform-origin:left;animation:growbar .5s forwards;}
+  @keyframes growbar{to{opacity:1;transform:scaleX(1);}}
+  .gbar.scaff{background:linear-gradient(90deg,var(--scaff),#0284c7);}
+  .gbar.asb{background:linear-gradient(90deg,var(--asb),#9333ea);}
+  .gbar.demo{background:linear-gradient(90deg,var(--demo),#b91c1c);}
+  .gbar.done{opacity:.5;filter:grayscale(.4);}
+  .gbar .pfill{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.28);border-radius:5px 0 0 5px;}
+  .gantt-today{position:absolute;top:0;bottom:0;width:2px;background:var(--demo);z-index:4;box-shadow:0 0 8px var(--demo);}
+  .gantt-today .tlabel{position:absolute;top:-4px;left:4px;font-size:9px;color:var(--demo);font-family:'JetBrains Mono',monospace;font-weight:600;}
+
+  /* TABLE */
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{text-align:left;color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;padding:8px 8px;border-bottom:1px solid var(--glass-line);}
+  td{padding:9px 8px;border-bottom:1px solid var(--glass-2);vertical-align:middle;}
+  tr:hover td{background:var(--glass-2);}
+  td.struct{font-weight:600;}
+  td.dt{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);}
+  .pbar{width:70px;height:6px;background:var(--glass-line);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:8px;}
+  .pbar span{display:block;height:100%;border-radius:3px;}
+  .pbar.scaff span{background:linear-gradient(90deg,var(--scaff),#0284c7);}
+  .pbar.asb span{background:linear-gradient(90deg,var(--asb),#9333ea);}
+  .pbar.demo span{background:linear-gradient(90deg,var(--demo),#b91c1c);}
+  .pct{font-family:'JetBrains Mono',monospace;font-size:11px;}
+  .empty{color:var(--dim);text-align:center;padding:30px;font-size:13px;}
+  .stat-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;}
+  .stat-tag.live{background:rgba(52,211,153,.15);color:var(--live);}
+  .stat-tag.done{background:rgba(91,107,126,.15);color:var(--done);}
+  .stat-tag.upcoming{background:rgba(96,165,250,.15);color:var(--sched);}
+</style>
+</head>
+<body>
+<div class="aurora"><span class="a1"></span><span class="a2"></span></div>
+<div class="boot"><div class="logo"></div><div class="txt">Loading schedule…</div></div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><div class="logo"></div><div><h1>269-ARD Look-Ahead</h1><div class="s">Scaffolding &amp; Asbestos scheduled work</div></div></div>
+    <nav class="nav">
+      <a href="index.html">Asbestos Board</a>
+      <a href="demo.html">Demo Board</a>
+      <a href="daily.html">Daily Activities</a>
+      <a href="lookahead.html" class="active">Look-Ahead</a>
+      <a href="overview.html">Overview</a>
+      <a href="reports.html" id="reportsLink">Reports</a>
+    </nav>
+    <span class="spacer"></span>
+    <div class="clock"><div class="t" id="ct">--:--:--</div><div class="d" id="cd">—</div></div>
+    <button class="theme-btn" id="themeBtn" title="Toggle day/night">☀</button>
+    <span class="userchip" id="userChip">…</span>
+    <button class="btn logout" id="logoutBtn">Sign out</button>
+  </div>
+
+  <div class="subbar">
+    <div class="rangeswitch">
+      <button data-days="7" class="on">1 Week</button>
+      <button data-days="30">1 Month</button>
+      <button data-days="42">6 Weeks</button>
+    </div>
+    <div class="rangeinfo" id="rangeInfo">—</div>
+  </div>
+
+  <div class="content" id="content">
+    <div class="card section"><div class="empty">Loading…</div></div>
+  </div>
+</div>
+
+<script type="module">
+import { requireAuth, doLogout, loadLive, watchLive, saveLive, canEdit, loadDemoLive, watchDemoLive, saveDemoLive } from "./js/app-common.js";
+import { initTheme, toggleTheme, startClock, todayISO, addDaysISO, fmtDMY, fmtDayDMY, daysBetween, buildLookahead, buildDemoLookahead } from "./js/ui-common.js";
+
+let BASE_SCHEDULE={};      // from schedule.json
+let scheduleEdits={};      // overrides from Firebase (asbestos board doc)
+let SCHEDULE={};           // merged view used for rendering
+let DEMO_BASE={};          // from demo_schedule.json
+let demoScheduleEdits={};  // overrides from Firebase (demo board doc)
+let DEMO_SCHEDULE={};      // merged demo view
+let rangeDays=7;
+let CAN_EDIT=false;
+let CURRENT_USER=null;
+
+function rebuildMerged(){
+  SCHEDULE={};
+  const keys=new Set([...Object.keys(BASE_SCHEDULE), ...Object.keys(scheduleEdits)]);
+  keys.forEach(k=>{ SCHEDULE[k] = scheduleEdits[k] ? scheduleEdits[k] : BASE_SCHEDULE[k]; });
+  DEMO_SCHEDULE={};
+  const dkeys=new Set([...Object.keys(DEMO_BASE), ...Object.keys(demoScheduleEdits)]);
+  dkeys.forEach(k=>{ DEMO_SCHEDULE[k] = demoScheduleEdits[k] ? demoScheduleEdits[k] : DEMO_BASE[k]; });
+}
+
+initTheme();
+document.getElementById('themeBtn').onclick=()=>{ toggleTheme(); render(); };
+document.getElementById('logoutBtn').onclick=doLogout;
+startClock(document.getElementById('ct'), document.getElementById('cd'));
+
+document.querySelectorAll('.rangeswitch button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.rangeswitch button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); rangeDays=+b.dataset.days; render();
+  };
+});
+
+function ganttHTML(items, cls, fromISO, toISO){
+  if(items.length===0) return '<div class="empty">No '+cls+' activities in this window.</div>';
+  const total=Math.max(daysBetween(fromISO,toISO),1);
+  const pxPerDay=Math.max(9, Math.min(26, 720/total));
+  const labelW=195;
+  const today=todayISO();
+  let ticks='';
+  // weekly ticks
+  for(let i=0;i<=total;i+=7){
+    const dISO=addDaysISO(fromISO,i);
+    ticks+='<div class="gantt-tick wk" style="left:'+(labelW+i*pxPerDay)+'px">'+fmtDMY(dISO)+'</div>';
+  }
+  let rows='';
+  items.forEach((it,idx)=>{
+    const off=Math.max(0,daysBetween(fromISO,it.s));
+    const rawLen=daysBetween(it.s,it.f)||1;
+    const visLen=Math.min(rawLen, total-off);
+    const left=labelW+off*pxPerDay;
+    const w=Math.max(visLen*pxPerDay,10);
+    const done=it.status==='done';
+    rows+='<div class="grow">'+
+      '<div class="glabel">'+it.structure+' · '+it.activity+'</div>'+
+      '<div class="gbar '+cls+(done?' done':'')+'" style="left:'+left+'px;width:'+w+'px;animation-delay:'+(idx*30)+'ms">'+
+        (it.p>0&&it.p<100?'<div class="pfill" style="width:'+it.p+'%"></div>':'')+
+        '<span style="position:relative;z-index:2">'+(w>60?it.activity:'')+'</span>'+
+      '</div></div>';
+  });
+  const todayOff=daysBetween(fromISO,today);
+  let todayLine='';
+  if(todayOff>=0&&todayOff<=total){
+    todayLine='<div class="gantt-today" style="left:'+(labelW+todayOff*pxPerDay)+'px"><span class="tlabel">TODAY</span></div>';
+  }
+  const width=labelW+total*pxPerDay+30;
+  return '<div class="gantt"><div class="gantt-inner" style="width:'+width+'px">'+
+    '<div class="gantt-axis" style="margin-left:0">'+ticks+'</div>'+todayLine+rows+'</div></div>';
+}
+
+function tableHTML(items, cls){
+  if(items.length===0) return '';
+  let rows='';
+  items.forEach(it=>{
+    const dateCell = (val, field)=> CAN_EDIT
+      ? '<input class="la-date" type="date" data-struct="'+encodeURIComponent(it.structure)+'" data-idx="'+it.idx+'" data-field="'+field+'" value="'+val+'">'
+      : fmtDayDMY(val);
+    const pctCell = CAN_EDIT
+      ? '<span class="pbar '+cls+'"><span style="width:'+it.p+'%"></span></span><input class="la-pct" type="number" min="0" max="100" data-struct="'+encodeURIComponent(it.structure)+'" data-idx="'+it.idx+'" data-field="p" value="'+it.p+'">%'
+      : '<span class="pbar '+cls+'"><span style="width:'+it.p+'%"></span></span><span class="pct">'+it.p+'%</span>';
+    rows+='<tr>'+
+      '<td class="struct">'+it.structure+'</td>'+
+      '<td>'+it.activity+'</td>'+
+      '<td class="dt">'+dateCell(it.s,'s')+'</td>'+
+      '<td class="dt">'+dateCell(it.f,'f')+'</td>'+
+      '<td>'+pctCell+'</td>'+
+      '<td><span class="stat-tag '+it.status+'">'+it.status.toUpperCase()+'</span></td>'+
+    '</tr>';
+  });
+  return '<table><thead><tr><th>Structure</th><th>Activity</th><th>Start</th><th>Finish</th><th>Progress</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function structureRollup(items, cls){
+  // unique structures in this window with their overall % (avg of all their activities in schedule)
+  const seen=new Map();
+  items.forEach(it=>{
+    if(!seen.has(it.structure)) seen.set(it.structure, []);
+  });
+  // compute overall % from the full schedule for each structure
+  let chips='';
+  seen.forEach((_, structure)=>{
+    const acts=SCHEDULE[structure]||[];
+    const pct = acts.length ? Math.round(acts.reduce((s,a)=>s+(Number(a.p)||0),0)/acts.length) : 0;
+    chips+='<div class="srchip"><span class="srname">'+structure+'</span>'+
+      '<span class="srbar '+cls+'"><span style="width:'+pct+'%"></span></span>'+
+      '<span class="srpct">'+pct+'%</span></div>';
+  });
+  if(!chips) return '';
+  return '<div class="rollup">'+chips+'</div>';
+}
+function sectionHTML(title, cls, dotcls, items, fromISO, toISO){
+  const legend='<div class="legend">'+
+    '<span><i style="background:var(--live)"></i>Live</i></span>'+
+    '<span><i style="background:var(--sched)"></i>Upcoming</span>'+
+    '<span><i style="background:var(--done)"></i>Done</span></div>';
+  return '<div class="card section">'+
+    '<div class="sec-head '+dotcls+'"><span class="dot"></span><h2>'+title+'</h2>'+
+      '<span class="count">'+items.length+' activities</span>'+legend+'</div>'+
+    structureRollup(items, cls)+
+    ganttHTML(items, cls, fromISO, toISO)+
+    tableHTML(items, cls)+
+  '</div>';
+}
+
+function render(){
+  rebuildMerged();
+  const from=todayISO();
+  const to=addDaysISO(from, rangeDays);
+  const data=buildLookahead(SCHEDULE, from, to);
+  const demoData=buildDemoLookahead(DEMO_SCHEDULE, from, to);
+  document.getElementById('rangeInfo').innerHTML='Window: <b>'+fmtDMY(from)+'</b> → <b>'+fmtDMY(to)+'</b> · '+rangeDays+' days'+(CAN_EDIT?' · <span style="color:var(--acc2)">editing enabled</span>':'');
+  const c=document.getElementById('content');
+  c.innerHTML =
+    sectionHTML('Scaffolding', 'scaff', 'scaff', data.scaffolding, from, to)+
+    sectionHTML('Asbestos Removal', 'asb', 'asb', data.asbestos, from, to)+
+    demoSectionHTML('Demolition', 'demo', demoData, from, to);
+  if(CAN_EDIT) attachEditHandlers();
+}
+
+// Demolition section (read-only in look-ahead; editing happens on the Demo Board)
+function demoSectionHTML(title, cls, items, fromISO, toISO){
+  const legend='<div class="legend">'+
+    '<span><i style="background:var(--live)"></i>Live</span>'+
+    '<span><i style="background:var(--sched)"></i>Upcoming</span>'+
+    '<span><i style="background:var(--done)"></i>Done</span></div>';
+  let tbody='';
+  items.forEach(it=>{
+    const stat = it.status==='completed'?'done':(it.status==='live'?'live':'upcoming');
+    const dateCell=(val,field)=> CAN_EDIT
+      ? '<input class="dm-date" type="date" data-struct="'+encodeURIComponent(it.structure)+'" data-idx="'+it.idx+'" data-field="'+field+'" value="'+val+'">'
+      : fmtDayDMY(val);
+    const pctCell = CAN_EDIT
+      ? '<span class="pbar demo"><span style="width:'+it.p+'%"></span></span><input class="dm-pct" type="number" min="0" max="100" data-struct="'+encodeURIComponent(it.structure)+'" data-idx="'+it.idx+'" data-field="p" value="'+it.p+'">%'
+      : '<span class="pbar demo"><span style="width:'+it.p+'%"></span></span><span class="pct">'+it.p+'%</span>';
+    tbody+='<tr>'+
+      '<td class="struct">'+it.structure+'</td>'+
+      '<td>'+it.activity+'</td>'+
+      '<td class="dt">'+dateCell(it.s,'s')+'</td>'+
+      '<td class="dt">'+dateCell(it.f,'f')+'</td>'+
+      '<td>'+pctCell+'</td>'+
+      '<td><span class="stat-tag '+stat+'">'+stat.toUpperCase()+'</span></td>'+
+    '</tr>';
+  });
+  const table = items.length? '<table><thead><tr><th>Area</th><th>Activity</th><th>Start</th><th>Finish</th><th>Progress</th><th>Status</th></tr></thead><tbody>'+tbody+'</tbody></table>' : '<div class="empty">No demolition activities in this window.</div>';
+  return '<div class="card section">'+
+    '<div class="sec-head demo"><span class="dot"></span><h2>'+title+'</h2>'+
+      '<span class="count">'+items.length+' activities</span>'+legend+'</div>'+
+    ganttHTML(items, cls, fromISO, toISO)+
+    table+
+  '</div>';
+}
+
+function ensureEditable(structure){
+  if(!scheduleEdits[structure]){
+    const base = BASE_SCHEDULE[structure] || [];
+    scheduleEdits[structure] = base.map(a=>({a:a.a, s:a.s, f:a.f, p:a.p||0}));
+  }
+}
+let _saveTimer=null;
+function queueSave(){
+  clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(async()=>{
+    try{
+      const cur = await loadLive();
+      await saveLive({ ...cur, scheduleEdits }, CURRENT_USER);
+    }catch(e){ console.error('save failed', e); }
+  }, 400);
+}
+function attachEditHandlers(){
+  document.querySelectorAll('.la-date, .la-pct').forEach(inp=>{
+    inp.addEventListener('change',(e)=>{
+      const structure=decodeURIComponent(e.target.dataset.struct);
+      const idx=+e.target.dataset.idx;
+      const field=e.target.dataset.field;
+      ensureEditable(structure);
+      let val=e.target.value;
+      if(field==='p'){ val=Math.max(0,Math.min(100,Number(val)||0)); }
+      if(scheduleEdits[structure] && scheduleEdits[structure][idx]){
+        scheduleEdits[structure][idx][field]=val;
+        queueSave();
+        render();
+      }
+    });
+  });
+  // Demo edits -> demoBoard doc
+  document.querySelectorAll('.dm-date, .dm-pct').forEach(inp=>{
+    inp.addEventListener('change',(e)=>{
+      const structure=decodeURIComponent(e.target.dataset.struct);
+      const idx=+e.target.dataset.idx;
+      const field=e.target.dataset.field;
+      ensureDemoEditable(structure);
+      let val=e.target.value;
+      if(field==='p'){ val=Math.max(0,Math.min(100,Number(val)||0)); }
+      if(demoScheduleEdits[structure] && demoScheduleEdits[structure][idx]){
+        demoScheduleEdits[structure][idx][field]=val;
+        queueDemoSave();
+        render();
+      }
+    });
+  });
+}
+function ensureDemoEditable(structure){
+  if(!demoScheduleEdits[structure]){
+    const base = DEMO_BASE[structure] || [];
+    demoScheduleEdits[structure] = base.map(a=>({a:a.a, s:a.s, f:a.f, p:a.p||0}));
+  }
+}
+let _demoSaveTimer=null;
+function queueDemoSave(){
+  clearTimeout(_demoSaveTimer);
+  _demoSaveTimer=setTimeout(async()=>{
+    try{
+      const cur = await loadDemoLive();
+      await saveDemoLive({ ...cur, scheduleEdits: demoScheduleEdits }, CURRENT_USER);
+    }catch(e){ console.error('demo save failed', e); }
+  }, 400);
+}
+
+async function loadSchedule(){
+  BASE_SCHEDULE = await fetch('assets/schedule.json').then(r=>r.json());
+  try{ DEMO_BASE = await fetch('assets/demo_schedule.json').then(r=>r.json()); }
+  catch(e){ console.error('demo schedule load failed',e); DEMO_BASE={}; }
+}
+
+async function init(){
+  await loadSchedule();
+  requireAuth(async (user, role)=>{
+    CURRENT_USER = user;
+    CAN_EDIT = canEdit(role);
+    document.getElementById('userChip').textContent = (user.isAnonymous ? 'Guest' : user.email) + ' · ' + role;
+    if(role === 'guest'){ const rl=document.getElementById('reportsLink'); if(rl) rl.style.display='none'; }
+    // load any schedule edits from Firebase and keep in sync
+    try{
+      const live = await loadLive();
+      scheduleEdits = live.scheduleEdits || {};
+    }catch(e){ console.error('loadLive failed', e); scheduleEdits={}; }
+    try{
+      const dlive = await loadDemoLive();
+      demoScheduleEdits = dlive.scheduleEdits || {};
+    }catch(e){ console.error('loadDemoLive failed', e); demoScheduleEdits={}; }
+    render();
+    try{
+      watchLive((data)=>{ scheduleEdits = data.scheduleEdits || {}; render(); });
+    }catch(e){ console.error('watchLive failed', e); }
+    try{
+      watchDemoLive((data)=>{ demoScheduleEdits = data.scheduleEdits || {}; render(); });
+    }catch(e){ console.error('watchDemoLive failed', e); }
+  });
+}
+init();
+</script>
+</body>
+</html>
