@@ -754,12 +754,35 @@ function applyLive(data){
 }
 
 async function loadAssets(){
-  const [pinsRes, schedRes] = await Promise.all([
-    fetch('assets/pins.json').then(r=>r.json()),
-    fetch('assets/schedule.json').then(r=>r.json())
-  ]);
-  DEFAULT_PINS = pinsRes;
-  BASE_SCHEDULE = schedRes;
+  // Load pins and schedule independently so one failing doesn't wipe the board.
+  try{
+    const pinsRes = await fetch('assets/pins.json',{cache:'no-cache'});
+    if(!pinsRes.ok) throw new Error('pins.json HTTP '+pinsRes.status);
+    DEFAULT_PINS = await pinsRes.json();
+  }catch(e){
+    console.error('Failed to load pins.json:', e);
+    showLoadError('Could not load pin data (assets/pins.json). Check the file is uploaded to GitHub in the assets folder.');
+    DEFAULT_PINS = [];
+  }
+  try{
+    const schedRes = await fetch('assets/schedule.json',{cache:'no-cache'});
+    if(!schedRes.ok) throw new Error('schedule.json HTTP '+schedRes.status);
+    BASE_SCHEDULE = await schedRes.json();
+  }catch(e){
+    console.error('Failed to load schedule.json:', e);
+    BASE_SCHEDULE = {}; // pins still show; they'll just read as "no schedule"
+  }
+}
+
+function showLoadError(msg){
+  let bar = document.getElementById('loadErrBar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'loadErrBar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:#7f1d1d;color:#fff;padding:10px 16px;font-size:13px;font-family:Inter,sans-serif;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.4);';
+    document.body.appendChild(bar);
+  }
+  bar.textContent = '⚠ ' + msg;
 }
 
 async function lockTodayReport(){
