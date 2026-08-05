@@ -27,6 +27,14 @@
   .sec-head .legend i{width:9px;height:9px;border-radius:2px;display:inline-block;}
 
   /* GANTT */
+  .rollup{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .srchip{display:flex;align-items:center;gap:8px;background:var(--glass-2);border:1px solid var(--glass-line);border-radius:10px;padding:7px 11px;}
+  .srname{font-size:11.5px;font-weight:600;color:var(--ink);}
+  .srbar{width:60px;height:6px;background:var(--glass-line);border-radius:3px;overflow:hidden;}
+  .srbar span{display:block;height:100%;border-radius:3px;}
+  .srbar.scaff span{background:linear-gradient(90deg,var(--scaff),#0284c7);}
+  .srbar.asb span{background:linear-gradient(90deg,var(--asb),#9333ea);}
+  .srpct{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);min-width:32px;text-align:right;}
   .gantt{overflow-x:auto;padding-bottom:6px;margin-bottom:14px;}
   .gantt-inner{position:relative;min-width:760px;}
   .gantt-axis{position:relative;height:22px;border-bottom:1px solid var(--glass-line);margin-bottom:8px;}
@@ -167,6 +175,24 @@ function tableHTML(items, cls){
   return '<table><thead><tr><th>Structure</th><th>Activity</th><th>Start</th><th>Finish</th><th>Progress</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
+function structureRollup(items, cls){
+  // unique structures in this window with their overall % (avg of all their activities in schedule)
+  const seen=new Map();
+  items.forEach(it=>{
+    if(!seen.has(it.structure)) seen.set(it.structure, []);
+  });
+  // compute overall % from the full schedule for each structure
+  let chips='';
+  seen.forEach((_, structure)=>{
+    const acts=SCHEDULE[structure]||[];
+    const pct = acts.length ? Math.round(acts.reduce((s,a)=>s+(Number(a.p)||0),0)/acts.length) : 0;
+    chips+='<div class="srchip"><span class="srname">'+structure+'</span>'+
+      '<span class="srbar '+cls+'"><span style="width:'+pct+'%"></span></span>'+
+      '<span class="srpct">'+pct+'%</span></div>';
+  });
+  if(!chips) return '';
+  return '<div class="rollup">'+chips+'</div>';
+}
 function sectionHTML(title, cls, dotcls, items, fromISO, toISO){
   const legend='<div class="legend">'+
     '<span><i style="background:var(--live)"></i>Live</i></span>'+
@@ -175,6 +201,7 @@ function sectionHTML(title, cls, dotcls, items, fromISO, toISO){
   return '<div class="card section">'+
     '<div class="sec-head '+dotcls+'"><span class="dot"></span><h2>'+title+'</h2>'+
       '<span class="count">'+items.length+' activities</span>'+legend+'</div>'+
+    structureRollup(items, cls)+
     ganttHTML(items, cls, fromISO, toISO)+
     tableHTML(items, cls)+
   '</div>';
