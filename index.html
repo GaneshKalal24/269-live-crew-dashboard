@@ -832,10 +832,21 @@ async function init(){
     CAN_DELETE = (role === 'editor');
     document.getElementById('userChip').textContent = (user.isAnonymous ? 'Guest' : user.email) + ' · ' + role;
     wireEditingForRole();
-    const first = await loadLive();
-    applyLive(first);
+    // Draw pins immediately from local assets so the board is never empty,
+    // even if the Firebase live-data read fails or is slow.
     render();
-    watchLive((data)=>{ applyLive(data); render(); if(selectedId){ const p=findPin(selectedId); if(p) showPanel(p); } });
+    try{
+      const first = await loadLive();
+      applyLive(first);
+      render();
+    }catch(e){
+      console.error('loadLive failed (board still shows default pins):', e);
+    }
+    try{
+      watchLive((data)=>{ applyLive(data); render(); if(selectedId){ const p=findPin(selectedId); if(p) showPanel(p); } });
+    }catch(e){
+      console.error('watchLive failed:', e);
+    }
   });
 }
 init();
