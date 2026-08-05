@@ -78,11 +78,11 @@ export function buildLookahead(schedule, fromISO, toISO){
     const out = {scaffolding: [], asbestos: []}; 
   
     for(const [structure, acts] of Object.entries(schedule)){ 
-        for(const a of acts){ 
-            if(!a.s || !a.f) continue; 
+        acts.forEach((a, idx)=>{ 
+            if(!a.s || !a.f) return; 
       
             // overlap test: activity intersects the window 
-            if(a.f < fromISO || a.s > toISO) continue; 
+            if(a.f < fromISO || a.s > toISO) return; 
       
             let status = 'upcoming';
             if(a.p >= 100 || a.f < today) {
@@ -91,11 +91,11 @@ export function buildLookahead(schedule, fromISO, toISO){
                 status = 'live';
             }
       
-            const item = {structure, activity: a.a, s: a.s, f: a.f, p: a.p || 0, status}; 
+            const item = {structure, activity: a.a, s: a.s, f: a.f, p: a.p || 0, status, idx}; 
       
             if(SCAFFOLD_ACTS.has(a.a)) out.scaffolding.push(item); 
             else if(ASBESTOS_ACTS.has(a.a)) out.asbestos.push(item); 
-        } 
+        }); 
     } 
   
     out.scaffolding.sort((x, y) => x.s.localeCompare(y.s) || x.structure.localeCompare(y.structure)); 
