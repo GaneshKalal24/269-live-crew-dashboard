@@ -103,6 +103,43 @@ body::after{width:460px;height:460px;background:var(--aurora-2);bottom:-170px;ri
 .toolbar .spacer{margin-left:auto;}
 .banner{font-size:12px;color:var(--amber);margin-left:4px;}
 
+/* filter + search bar */
+.filterbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:2px 2px 0;}
+.searchwrap{position:relative;display:flex;align-items:center;}
+.searchwrap .sicon{position:absolute;left:11px;color:var(--muted);font-size:14px;pointer-events:none;}
+.searchwrap input{width:210px;font-family:'Inter',sans-serif;font-size:13px;padding:8px 28px 8px 30px;border-radius:10px;border:1px solid var(--line);background:var(--glass-2);color:var(--text);transition:.2s;}
+.searchwrap input:focus{outline:none;border-color:var(--acc2);box-shadow:0 0 0 3px rgba(34,211,238,.15);width:250px;}
+.searchwrap .sclear{position:absolute;right:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;}
+.searchwrap .sclear:hover{color:var(--text);}
+.chipset{display:flex;align-items:center;gap:5px;}
+.chip-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);font-weight:700;margin-right:2px;}
+.fchip{font-family:'Inter',sans-serif;font-size:11.5px;font-weight:600;padding:6px 11px;border-radius:20px;border:1px solid var(--line);background:var(--glass-2);color:var(--muted);cursor:pointer;transition:.18s;}
+.fchip:hover{color:var(--text);border-color:var(--acc2);}
+.fchip.on{color:#fff;border-color:transparent;}
+.fchip[data-status="live"].on{background:var(--green);}
+.fchip[data-status="hold"].on{background:var(--hold);}
+.fchip[data-status="upcoming"].on{background:var(--sched);}
+.fchip[data-status="done"].on{background:var(--grey);}
+.fchip.demo.on{background:var(--demo);}
+.fchip.asb.on{background:var(--asb);}
+.fchip.scaff.on{background:var(--scaff);}
+.fchip.sub.on{background:var(--sub);}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--muted);padding:6px 11px;font-size:11.5px;}
+.btn.ghost:hover{color:var(--text);background:var(--glass-2);}
+.filter-count{font-size:11.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+
+/* dimmed pins when filtered out */
+.pin.filtered-out{opacity:.12;filter:grayscale(1);pointer-events:none;transition:opacity .3s,filter .3s;}
+.pin.search-hit .dot{outline:3px solid var(--acc2);outline-offset:3px;animation:searchpop .6s ease;}
+@keyframes searchpop{0%{transform:scale(1);}40%{transform:scale(1.6);}100%{transform:scale(1);}}
+
+/* overall % bar in panel */
+.pct-overall{margin:12px 0 4px;}
+.pct-overall .pct-head{display:flex;justify-content:space-between;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700;margin-bottom:6px;}
+.pct-overall .pct-head b{font-family:'JetBrains Mono',monospace;color:var(--acc2);font-size:13px;}
+.pct-overall .pbar{height:8px;background:var(--glass-2);border-radius:5px;overflow:hidden;border:1px solid var(--line);}
+.pct-overall .pbar span{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:5px;box-shadow:0 0 10px rgba(34,211,238,.4);transition:width .8s cubic-bezier(.2,.9,.25,1);}
+
 /* stage / map */
 .stage{position:relative;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#000;flex:1;box-shadow:var(--shadow);touch-action:none;}
 .viewport{position:relative;transform-origin:0 0;will-change:transform;}
@@ -258,6 +295,29 @@ body::after{width:460px;height:460px;background:var(--aurora-2);bottom:-170px;ri
         <button class="btn" id="lockBtn">🔒 Lock end-of-day report</button>
         <button class="btn export" id="exportBtn">⭳ Export CSV</button>
       </div>
+      <div class="filterbar" id="filterbar">
+        <div class="searchwrap">
+          <span class="sicon">⌕</span>
+          <input type="text" id="searchInput" placeholder="Search structure…" autocomplete="off">
+          <button class="sclear" id="searchClear" style="display:none;">×</button>
+        </div>
+        <div class="chipset" id="statusChips">
+          <span class="chip-lbl">Status</span>
+          <button class="fchip" data-status="live">Live</button>
+          <button class="fchip" data-status="hold">On Hold</button>
+          <button class="fchip" data-status="upcoming">Scheduled</button>
+          <button class="fchip" data-status="done">Finished</button>
+        </div>
+        <div class="chipset" id="tradeChips">
+          <span class="chip-lbl">Trade</span>
+          <button class="fchip demo" data-trade="demolition">Demolition</button>
+          <button class="fchip asb" data-trade="asbestos">Asbestos</button>
+          <button class="fchip scaff" data-trade="scaffolding">Scaffolding</button>
+          <button class="fchip sub" data-trade="subcontractor">Sub</button>
+        </div>
+        <button class="btn ghost" id="clearFilters" style="display:none;">Clear all</button>
+        <span class="filter-count" id="filterCount"></span>
+      </div>
       <div class="stage" id="stage">
         <div class="viewport" id="viewport">
           <img id="bgImg" src="assets/site_bg.jpg" alt="Site aerial">
@@ -400,6 +460,36 @@ function fmtTs(ts){ if(!ts) return null; const d=new Date(ts);
   return days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear()+', '+pad(d.getHours())+':'+pad(d.getMinutes()); }
 const STATUS_LABEL = {live:'LIVE NOW',hold:'ON HOLD',upcoming:'SCHEDULED',done:'FINISHED',none:'NO SCHEDULE'};
 
+// ---- Filters & search state ----
+let activeStatusFilters = new Set();
+let activeTradeFilters = new Set();
+let searchTerm = '';
+
+function overallPct(pin){
+  const acts = activityRows(pinSchedKey(pin));
+  if(!acts || acts.length===0) return null;
+  const vals = acts.map(a=> Number(a.p)||0);
+  return Math.round(vals.reduce((s,v)=>s+v,0)/vals.length);
+}
+function pinTrades(pin){
+  const log = crewLog[pin.id];
+  const out = new Set();
+  if(log && log.crew){ CREW_TYPES.forEach(t=>{ if((Number(log.crew[t.key])||0)>0) out.add(t.key); }); }
+  return out;
+}
+function pinMatchesFilter(pin){
+  const st = effectiveStatus(pin);
+  if(activeStatusFilters.size>0 && !activeStatusFilters.has(st.state)) return false;
+  if(activeTradeFilters.size>0){
+    const trades = pinTrades(pin);
+    let any=false; activeTradeFilters.forEach(t=>{ if(trades.has(t)) any=true; });
+    if(!any) return false;
+  }
+  return true;
+}
+function anyFilterActive(){ return activeStatusFilters.size>0 || activeTradeFilters.size>0; }
+
+
 function updateKPIs(){
   let live=0,hold=0,up=0,done=0,crew=0;
   allPins().forEach(pin=>{
@@ -423,7 +513,8 @@ function render(){
   allPins().forEach(pin=>{
     const pos=getPos(pin); const st=effectiveStatus(pin); const total=crewTotal(pin.id);
     const el=document.createElement('div');
-    el.className='pin status-'+st.state+(pin.id===selectedId?' selected':'');
+    const dimmed = anyFilterActive() && !pinMatchesFilter(pin);
+    el.className='pin status-'+st.state+(pin.id===selectedId?' selected':'')+(dimmed?' filtered-out':'');
     el.style.left=pos.x+'%'; el.style.top=pos.y+'%'; el.dataset.id=pin.id;
 
     const ring=document.createElement('div'); ring.className='ring';
@@ -506,6 +597,7 @@ function showPanel(pin){
     <span class="status-pill ${st.state}">${STATUS_LABEL[st.state]}</span>
     <h2>${pin.label}</h2>
     <div class="overall">${oStart} &rarr; ${oFin}${!acts.length?' &middot; no activities yet':''}</div>
+    ${(()=>{ const op=overallPct(pin); return op===null?'':`<div class="pct-overall"><div class="pct-head"><span>Overall progress</span><b>${op}%</b></div><div class="pbar"><span style="width:${op}%"></span></div></div>`; })()}
 
     <div class="sec-title">Activities (editable) <span class="add-link" id="addActLink">+ add activity</span></div>
     <table class="act-table">
@@ -638,6 +730,71 @@ document.getElementById('resetPositionsBtn').addEventListener('click',async()=>{
 
 document.getElementById('lockBtn').addEventListener('click', lockTodayReport);
 document.getElementById('logoutBtn').addEventListener('click', doLogout);
+
+// ---------- SEARCH + FILTERS ----------
+function flyToPin(pin){
+  // center the viewport on the pin at a comfortable zoom
+  const stage=document.getElementById('stage');
+  const sw=stage.clientWidth, sh=stage.clientHeight;
+  const pos=getPos(pin);
+  const targetScale=2.4;
+  zoomState.scale=targetScale;
+  // pin position in unscaled content px = (pos% /100) * baseWidth; baseWidth = sw (image is width:100%)
+  const vpH=document.getElementById('viewport').offsetHeight;
+  const px=(pos.x/100)*sw, py=(pos.y/100)*vpH;
+  zoomState.x = sw/2 - px*targetScale;
+  zoomState.y = sh/2 - py*targetScale;
+  clampPan(); applyTransform();
+}
+function runSearch(term){
+  searchTerm=term.trim().toLowerCase();
+  document.getElementById('searchClear').style.display = searchTerm?'block':'none';
+  document.querySelectorAll('.pin').forEach(el=>el.classList.remove('search-hit'));
+  if(!searchTerm) return;
+  const match=allPins().find(p=> p.label.toLowerCase().includes(searchTerm) || p.id.toLowerCase().includes(searchTerm));
+  if(match){
+    selectedId=match.id;
+    render();
+    flyToPin(match);
+    setTimeout(()=>{ const el=document.querySelector('.pin[data-id="'+match.id+'"]'); if(el) el.classList.add('search-hit'); showBubble(match,getPos(match)); showPanel(match); },100);
+  }
+}
+const searchInput=document.getElementById('searchInput');
+searchInput.addEventListener('input',(e)=>runSearch(e.target.value));
+searchInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter') runSearch(e.target.value); });
+document.getElementById('searchClear').addEventListener('click',()=>{ searchInput.value=''; runSearch(''); });
+
+function updateFilterUI(){
+  const active=anyFilterActive();
+  document.getElementById('clearFilters').style.display=active?'inline-block':'none';
+  const fc=document.getElementById('filterCount');
+  if(active){
+    const shown=allPins().filter(pinMatchesFilter).length;
+    fc.textContent=shown+' of '+allPins().length+' fronts';
+  }else fc.textContent='';
+}
+document.querySelectorAll('#statusChips .fchip').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    const s=chip.dataset.status;
+    if(activeStatusFilters.has(s)){ activeStatusFilters.delete(s); chip.classList.remove('on'); }
+    else{ activeStatusFilters.add(s); chip.classList.add('on'); }
+    render(); updateFilterUI();
+  });
+});
+document.querySelectorAll('#tradeChips .fchip').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    const t=chip.dataset.trade;
+    if(activeTradeFilters.has(t)){ activeTradeFilters.delete(t); chip.classList.remove('on'); }
+    else{ activeTradeFilters.add(t); chip.classList.add('on'); }
+    render(); updateFilterUI();
+  });
+});
+document.getElementById('clearFilters').addEventListener('click',()=>{
+  activeStatusFilters.clear(); activeTradeFilters.clear();
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('on'));
+  render(); updateFilterUI();
+});
+
 
 // ---------- CLEAN CSV EXPORT ----------
 function csvEsc(v){ v=(v==null?'':String(v)); return '"'+v.replace(/"/g,'""')+'"'; }
