@@ -171,42 +171,119 @@ const LEADS_OK=["No worries — ","Righto, ","Too easy — ","Sure thing — ","
 const LEADS_GOOD=["Good news — ","She's looking alright — ","Not bad — "];
 
 // Small-talk / chit-chat handling. Returns a reply string, or null if not small talk.
-function smallTalk(low){
-  // greetings
-  if(/^(hi|hey|hello|yo|gday|g'day|howdy|morning|arvo|evening|sup|oi)\b/.test(low) || /^good (morning|arvo|afternoon|evening)/.test(low)){
-    return `${timeGreeting()}! I'm ${BOT_NAME}, your site offsider. Ask me what's live, who's on site, when something's coming down, or what's finishing this week. What're ya after?`;
+// Small-talk / chit-chat. Takes (low, raw, mem) — mem carries the known name.
+// Returns {text, learnName?} or null if not small talk.
+function smallTalk(low, raw, mem){
+  raw = raw || low;
+  mem = mem || {};
+  const name = mem.name || '';
+  const heyName = name ? `, ${name}` : '';
+
+  // ---- NAME CAPTURE: "I'm Ganesh", "my name is Dave", "this is Johnno", "it's Macca" ----
+  const nameMatch = raw.match(/\b(?:i'?m|i am|my name'?s?|my name is|name is|this is|it'?s|call me)\s+([A-Z][a-z]+|[a-z]{2,})\b/i);
+  if(nameMatch){
+    let n = nameMatch[1];
+    // ignore if it's actually a state word ("i'm live", "i'm good", "i'm here")
+    const notNames = ['good','fine','ok','okay','here','live','busy','tired','back','done','ready','right','sure','keen','off','on','out','well','great','alright','knackered','buggered','stuffed','sweet','set'];
+    if(!notNames.includes(n.toLowerCase())){
+      n = n.charAt(0).toUpperCase()+n.slice(1).toLowerCase();
+      return { text: pick([
+        `G'day ${n}! Good to meet ya 👋 I'm ${BOT_NAME}, your site offsider. What can I sort out for ya?`,
+        `${n}! Righto, I'll remember that. I'm ${BOT_NAME} — ask us what's live, who's on site, or when something's coming down.`,
+        `Nice one, ${n}. I'm ${BOT_NAME}. What're ya chasing — schedule, crew, or what's finishing this week?`
+      ]), learnName:n };
+    }
   }
-  // how are you
-  if(/how('?s| is| are|zit).*(you|going|it going|things|ya)|how ya going|you good|hows things/.test(low)){
-    return pick([
-      `Yeah good, mate — no dramas. Boards are humming along. What can I do for ya?`,
+  // "what's my name?" / "do you know me?"
+  if(/\b(what'?s my name|who am i|do you know me|remember me|my name)\b/.test(low)){
+    return { text: name ? `Course I do — you're ${name}! 😄 What can I do for ya?` : `Don't think ya told me yet, mate. Say “I'm [your name]” and I'll remember it.` };
+  }
+
+  // ---- GREETINGS ----
+  if(/^(hi+|hey+|hello+|yo+|gday|g'day|howdy|hiya|heya|oi|sup|wassup|whats up|what's up|morning|mornin|arvo|evening|evenin)\b/.test(low) || /^good (morning|mornin|arvo|afternoon|evening|evenin|day)/.test(low)){
+    return { text: `${timeGreeting()}${heyName}! I'm ${BOT_NAME}, your site offsider. Ask us what's live, who's on site, when something's coming down, or what's finishing this week. What're ya after?` };
+  }
+  // ---- HOW ARE YOU ----
+  if(/how('?s| is| are|zit| ya)?\s*(you|going|it going|things|ya|is it going|we going|everything)|how ya going|you good|hows things|how's tricks|you right/.test(low)){
+    return { text: pick([
+      `Yeah good${heyName} — no dramas. Boards are humming along. What can I do for ya?`,
       `Can't complain! Keeping an eye on the schedule for ya. What do you need?`,
-      `All good here. Ready when you are — what're we looking at?`
-    ]);
+      `All good here${heyName}. Ready when you are — what're we looking at?`,
+      `Flat out like a lizard drinkin', but always got time for you. What's up?`
+    ]) };
   }
-  // thanks
-  if(/\b(thanks|thank you|cheers|ta|legend|good on ya|nice one|appreciate|thx|ty)\b/.test(low)){
-    return pick([`No worries at all 👍`,`Too easy, mate.`,`Anytime! Give us a yell if you need owt else.`,`She's right — happy to help.`]);
+  // ---- HOW'S THE USER / feelings ----
+  if(/\b(i'?m (good|great|fine|alright|ok|okay|well|sweet|keen))\b/.test(low)){
+    return { text: pick([`Good to hear${heyName}! What can I help with?`,`Ripper. What're ya after?`,`Beauty. Let's get into it — what do ya need?`]) };
   }
-  // who/what are you
-  if(/\b(who are you|what are you|your name|who r u|what can you do|help|what do you do)\b/.test(low)){
-    return `I'm ${BOT_NAME} — your assistant for the 269-ARD job. I read straight off the live schedule and crew boards, so I can tell you:<br>· <i>“What's live right now?”</i><br>· <i>“When's B-1203 coming down?”</i><br>· <i>“What's finishing this week?”</i><br>· <i>“What's behind schedule?”</i><br>· <i>“Which fronts have no crew?”</i><br>· <i>“How many on site today?”</i><br>Just ask like you'd ask a mate.`;
+  if(/\b(i'?m (tired|knackered|buggered|stuffed|exhausted|over it|done|busy|flat out|slammed))\b/.test(low)){
+    return { text: pick([`Ha, long day on the tools eh? I'll keep it quick${heyName}. What do ya need?`,`Fair enough — I'll make it easy. What're ya after?`,`Big day by the sounds. Give us a question and I'll sort it fast.`]) };
   }
-  // bye
-  if(/^(bye|see ya|cya|later|catch ya|gotta go|goodbye|seeya)\b/.test(low)){
-    return pick([`Catch ya, mate! 👋`,`See ya round. Stay safe out there.`,`Righto — give us a yell anytime.`]);
+  // ---- THANKS ----
+  if(/\b(thanks|thank you|thankyou|cheers|ta|nice one|good on ya|legend|champion|appreciate|thx|ty|much appreciated)\b/.test(low)){
+    return { text: pick([`No worries at all${heyName} 👍`,`Too easy, mate.`,`Anytime! Give us a yell if you need owt else.`,`She's right — happy to help.`,`No dramas${heyName}. What else?`]) };
   }
-  // compliments / banter
-  if(/\b(good bot|nice bot|smart|clever|love it|awesome|deadset|ripper|beauty|you're good)\b/.test(low)){
-    return pick([`Ha, cheers mate 😄 Just doing me job.`,`Deadset appreciate it. What's next?`,`Too kind — now what can I find ya?`]);
+  // ---- WHO/WHAT ARE YOU ----
+  if(/\b(who are you|what are you|your name|who r u|who's this|whats your name|what's your name|introduce yourself)\b/.test(low)){
+    return { text: `I'm ${BOT_NAME} — your assistant for the 269-ARD job 👷 I read straight off the live schedule and crew boards. Ask me things like:<br>· <i>“What's live right now?”</i><br>· <i>“When's B-1203 coming down?”</i><br>· <i>“What's finishing this week?”</i><br>· <i>“Which fronts have no crew?”</i><br>Just ask like you'd ask a mate.` };
   }
-  // are you a robot / AI
-  if(/\b(are you (a )?(robot|bot|ai|human|real)|is this ai)\b/.test(low)){
-    return `Bit of both, mate — I'm a helper that reads your project data. Not a real bloke, but I'll do me best to sound like one 😄 What do you need?`;
+  // ---- WHAT CAN YOU DO / HELP ----
+  if(/\b(what can you do|what do you do|help me|need help|how do you work|how does this work|what should i ask|options|commands)\b/.test(low)){
+    return { text: `Plenty${heyName}! I can tell ya:<br>· <b>What's live / on hold / scheduled</b><br>· <b>When a structure's coming down</b> (e.g. “when's B-1501 due?”)<br>· <b>What's finishing this week or next</b><br>· <b>What's behind schedule</b><br>· <b>Which fronts have no crew</b><br>· <b>How many on site today</b><br>· <b>Overall project progress</b><br>Give any of 'em a burl.` };
   }
-  // frustration (keep it friendly)
-  if(/\b(useless|stupid|dumb|wtf|crap|rubbish|not working|broken)\b/.test(low)){
-    return `Fair enough — sorry if I missed it. I'm best with schedule and crew questions. Try “what's live?” or “when's B-1501 coming down?” and I'll sort ya out.`;
+  // ---- JOKES ----
+  if(/\b(joke|funny|make me laugh|cheer me up|tell me something|got any jokes)\b/.test(low)){
+    return { text: pick([
+      `Why don't scaffolders ever get lost? They always know the right levels to be on. 😄`,
+      `What did the excavator say to the dump truck? “You've got a lotta baggage, mate.” 🚛`,
+      `Why'd the asbestos removalist bring a ladder? Heard the job had a high ceiling. 😂`,
+      `How does a demo crew say sorry? They bring the house down… then knock it down. 🏗️`,
+      `I'd tell ya a concrete joke but it's still setting. Give us a bit. 😏`,
+      `Why don't cranes ever panic? They keep everything on the level. 🏗️`
+    ]) };
+  }
+  // ---- WEATHER (deflect, no data) ----
+  if(/\b(weather|rain|raining|hot|cold|windy|forecast|temperature|sunny|storm)\b/.test(low) && !/\b(front|structure|b-?\d)\b/.test(low)){
+    return { text: `Ha, I'm no weatherman${heyName} — best check ya phone for that. But I can tell ya what's happening on the boards. What're ya after?` };
+  }
+  // ---- TIME / DATE ----
+  if(/\b(what time|what's the time|the time|what day|what'?s the date|today'?s date|what date)\b/.test(low)){
+    const now=new Date();
+    const ds=now.toLocaleDateString('en-AU',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+    const ts=now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+    return { text: `It's ${ts} on ${ds}${heyName}. Now, what can I find ya on the job?` };
+  }
+  // ---- BYE ----
+  if(/^(bye|see ya|cya|later|catch ya|catchya|gotta go|goodbye|seeya|hooroo|off i go|knock off|heading off)\b/.test(low)){
+    return { text: pick([`Catch ya${heyName}! 👋`,`See ya round. Stay safe out there.`,`Righto — give us a yell anytime.`,`Hooroo${heyName}! Have a good one.`]) };
+  }
+  // ---- COMPLIMENTS / BANTER ----
+  if(/\b(good bot|nice bot|smart|clever|love it|awesome|deadset|ripper|beauty|you'?re good|you'?re great|good work|well done|top stuff|bloody good)\b/.test(low)){
+    return { text: pick([`Ha, cheers${heyName} 😄 Just doing me job.`,`Deadset appreciate it. What's next?`,`Too kind — now what can I find ya?`,`🙏 Ya legend. What else can I dig up?`]) };
+  }
+  // ---- INSULTS / FRUSTRATION (stay friendly) ----
+  if(/\b(useless|stupid|dumb|wtf|crap|rubbish|not working|broken|hopeless|garbage|shit|suck|terrible|worst)\b/.test(low)){
+    return { text: `Fair enough${heyName} — sorry if I missed it. I'm best with schedule and crew questions. Try “what's live?” or “when's B-1501 coming down?” and I'll sort ya out.` };
+  }
+  // ---- ARE YOU AI ----
+  if(/\b(are you (a )?(robot|bot|ai|human|real|person)|is this ai|are you real|you a bot)\b/.test(low)){
+    return { text: `Bit of both${heyName} — I'm a helper that reads your project data. Not a real bloke, but I'll do me best to sound like one 😄 What do you need?` };
+  }
+  // ---- LOVE / MARRY / silly ----
+  if(/\b(i love you|marry me|will you be my|do you love me)\b/.test(low)){
+    return { text: `Steady on${heyName} 😄 I'm flattered, but I'm married to the schedule. Speaking of which — what do ya need?` };
+  }
+  // ---- YES/NO/OK on their own (acknowledge) ----
+  if(/^(yes|yeah|yep|yup|nah|no|nope|ok|okay|righto|cool|sweet|sure|k)\.?$/.test(low)){
+    return { text: pick([`Righto${heyName} — fire away whenever.`,`👍 What's next?`,`Sweet. Ask us anything about the job.`]) };
+  }
+  // ---- SORRY ----
+  if(/^(sorry|my bad|oops|whoops)\b/.test(low)){
+    return { text: pick([`All good${heyName}, no need to be sorry! What can I do?`,`No dramas at all. What're ya after?`]) };
+  }
+  // ---- SWEARING HELLO (aussie) ----
+  if(/^(oi mate|oi ardy|yo ardy|ardy)\b/.test(low)){
+    return { text: `${timeGreeting()}${heyName}! Right here. What do ya need?` };
   }
   return null;
 }
@@ -279,17 +356,22 @@ function answerCrew(D){
 }
 
 // ---- main router ----
-// ctx = { lastPin, lastIntent } carried between turns for follow-ups
+// ctx = { lastPin, lastIntent, mem } carried between turns; mem persists learned facts (name etc.)
 export function askBot(qRaw, D, ctx){
   ctx = ctx || {};
+  const mem = ctx.mem || {};
   const q=(qRaw||'').trim();
   if(!q) return {text:"What're ya after, mate? Try “what's live?” or “when's B-1203 coming down?”"};
   const low=q.toLowerCase();
   const today=todayISO();
 
-  // 0) small talk / chit-chat first
-  const stalk=smallTalk(low);
-  if(stalk) return {text:stalk, smalltalk:true};
+  // 0) small talk / chit-chat first (handles greetings, name capture, jokes, etc.)
+  const stalk=smallTalk(low, q, mem);
+  if(stalk){
+    const out={text:stalk.text, smalltalk:true};
+    if(stalk.learnName) out.learnName=stalk.learnName;
+    return out;
+  }
 
   // 1) context follow-ups: "what about next week?", "and this week?", "how many on it?"
   if(/^(what about|how about|and)\b/.test(low) || /^(next week|this week)\??$/.test(low)){
@@ -489,7 +571,7 @@ export function mountChatbot(opts){
   }
 
   let pendingTeach=null; // {alias} awaiting the user to pick which structure
-  let ctx={};            // conversation memory: lastPin, intent — for follow-ups
+  let ctx={ mem: (opts.profile && opts.profile.mem) ? opts.profile.mem : {} };  // conversation memory + learned facts (name)
 
   function submit(text){
     text=(text||input.value).trim(); if(!text) return;
@@ -519,6 +601,10 @@ export function mountChatbot(opts){
       // remember context for follow-up questions
       if(ans.lastPin) ctx.lastPin=ans.lastPin;
       if(ans.intent) ctx.intent=ans.intent;
+      // learning: remember the person's name + log the question for pattern-learning
+      if(ans.learnName){ ctx.mem.name=ans.learnName; }
+      if(ans.intent && ans.intent!=='smalltalk'){ ctx.mem.asks = ctx.mem.asks||{}; ctx.mem.asks[ans.intent]=(ctx.mem.asks[ans.intent]||0)+1; }
+      if(opts.onProfile){ try{ opts.onProfile({ mem: ctx.mem }); }catch(e){} }
       addMsg(ans.text,'bot');
       // If it couldn't match and the user CAN teach, offer to learn a nickname.
       if(ans.fallback && ans.unmatched && opts.canTeach){
