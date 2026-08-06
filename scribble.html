@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field Notes — 269-ARD</title>
+<link rel="stylesheet" href="css/aurora.css">
+<style>
+  .app{grid-template-rows:auto 1fr;}
+  .wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;overflow:hidden;}
+  .wrap.solo{grid-template-columns:1fr;max-width:720px;margin:0 auto;width:100%;}
+  .col{display:flex;flex-direction:column;gap:12px;overflow-y:auto;padding-right:4px;}
+  .pad{padding:18px 20px;display:flex;flex-direction:column;}
+  .pad h2{font-family:'Sora',sans-serif;font-size:15px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+  .pad .hint{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;}
+  .scribble-area{width:100%;min-height:280px;flex:1;background:var(--glass-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;color:var(--text);font-family:'Inter',sans-serif;font-size:15px;line-height:1.7;resize:vertical;}
+  .scribble-area:focus{outline:none;border-color:var(--acc2);box-shadow:0 0 0 3px rgba(34,211,238,.12);}
+  .padfoot{display:flex;align-items:center;gap:10px;margin-top:12px;}
+  .padfoot .saved{font-size:12px;color:var(--live);opacity:0;transition:opacity .3s;}
+  .padfoot .saved.show{opacity:1;}
+  .examples{margin-top:14px;background:var(--glass-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.7;}
+  .examples b{color:var(--text);}
+
+  .datebar{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .datebar input{background:var(--glass-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 9px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+  .datebar .who{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+
+  /* review side (editor) */
+  .review h2{font-family:'Sora',sans-serif;font-size:15px;font-weight:600;margin-bottom:10px;}
+  .subcard{background:var(--glass-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;}
+  .subcard .sh{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .subcard .sh .auth{font-weight:600;font-size:13px;}
+  .subcard .sh .tag{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700;}
+  .tag.submitted{background:rgba(251,191,36,.15);color:var(--hold);}
+  .tag.approved{background:rgba(52,211,153,.15);color:var(--live);}
+  .tag.draft{background:rgba(91,107,126,.15);color:var(--muted);}
+  .rawtext{background:var(--bg2,rgba(0,0,0,.2));border-radius:8px;padding:9px 11px;font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.5;margin-bottom:10px;border-left:3px solid var(--acc);}
+  .parsed-row{display:grid;grid-template-columns:1fr 1fr 60px 56px auto;gap:6px;align-items:center;margin-bottom:6px;}
+  .parsed-row input,.parsed-row select{background:var(--glass);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:6px 8px;font-size:12px;width:100%;}
+  .parsed-row .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;}
+  .parsed-row .del:hover{color:var(--red);}
+  .plabel{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700;margin:10px 0 5px;}
+  .unmatched{border-color:var(--hold) !important;box-shadow:0 0 0 1px var(--hold);}
+  .reviewactions{display:flex;gap:8px;margin-top:12px;}
+  .empty-review{color:var(--muted);text-align:center;padding:50px 10px;font-size:13px;line-height:1.6;}
+  .btn.approve{background:linear-gradient(135deg,var(--live),#059669);color:#fff;border:none;}
+  .btn.reparse{background:var(--glass-2);}
+  .learnote{font-size:11px;color:var(--acc2);margin-top:6px;}
+</style>
+</head>
+<body>
+<div class="aurora"><span class="a1"></span><span class="a2"></span></div>
+<div class="boot"><div class="logo"></div><div class="txt">Loading field notes…</div></div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><div class="logo"></div><div><h1>269-ARD Field Notes</h1><div class="s">Scribble what happened — we'll sort it out</div></div></div>
+    <nav class="nav" id="nav"></nav>
+    <span class="spacer"></span>
+    <div class="clock"><div class="t" id="ct">--:--:--</div><div class="d" id="cd">—</div></div>
+    <button class="theme-btn" id="themeBtn" title="Toggle day/night">☀</button>
+    <span class="userchip" id="userChip">…</span>
+    <button class="btn logout" id="logoutBtn">Sign out</button>
+  </div>
+
+  <div class="wrap" id="wrap">
+    <!-- left: scribble pad -->
+    <div class="col">
+      <div class="card pad">
+        <div class="datebar">
+          <input type="date" id="dateInput">
+          <span class="who" id="whoLabel"></span>
+        </div>
+        <h2>✍️ Today's notes</h2>
+        <div class="hint">Just write it how you'd say it. Names, how many, where, hours. Don't worry about formatting.</div>
+        <textarea class="scribble-area" id="scribble" placeholder="e.g. Johnno + 2 lads on B-1501 asbestos 6hrs&#10;Davo drove telehandler all day&#10;3 blokes stripping at B-1101, 8 hours&#10;1 guy in blending area 5hrs"></textarea>
+        <div class="padfoot">
+          <button class="btn accent" id="submitBtn">Submit notes</button>
+          <span class="saved" id="savedFlash">✓ Saved</span>
+        </div>
+        <div class="examples">
+          <b>Tips:</b> use structure tags like <b>B-1501</b>, <b>B1101</b>, <b>63-FCC</b> · say <b>6hrs</b> or <b>all day</b> · <b>+2 lads</b> or <b>3 blokes</b> · mention <b>asbestos / demo / scaffold</b> · plant like <b>telehandler, moxy, water cart</b> go to site-wide.
+        </div>
+      </div>
+    </div>
+    <!-- right: review (editors only) -->
+    <div class="col review" id="reviewCol">
+      <div class="card pad"><div class="empty-review">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { requireAuth, doLogout, canEdit, isSupervisor, canSeeScribbles,
+         saveScribble, watchScribble, watchScribblesForDay,
+         loadDaily, saveDaily, loadLive, saveLive,
+         loadDictionary, saveDictionary } from "./js/app-common.js";
+import { initTheme, toggleTheme, startClock, todayISO, addDaysISO, fmtDMY, fmtDayDMY } from "./js/ui-common.js";
+import { parseScribble, learnCorrection } from "./js/parser.js";
+
+let ROLE='viewer', USER=null, CAN_EDIT=false, SUP=false;
+let curDate=todayISO();
+let DICT={people:{},plant:{},structures:{},aliases:{}};
+let STRUCT_KEYS=[];
+let myUnsub=null, dayUnsub=null;
+
+initTheme();
+document.getElementById('themeBtn').onclick=()=>toggleTheme();
+document.getElementById('logoutBtn').onclick=doLogout;
+startClock(document.getElementById('ct'), document.getElementById('cd'));
+
+const dateInput=document.getElementById('dateInput');
+dateInput.addEventListener('change',()=>{ curDate=dateInput.value; resubscribe(); });
+
+// ---- SCRIBBLE PAD (supervisor writes; also visible to editor) ----
+const scribbleEl=document.getElementById('scribble');
+let _saveT=null;
+scribbleEl.addEventListener('input',()=>{
+  clearTimeout(_saveT);
+  _saveT=setTimeout(async()=>{
+    await saveScribble(curDate, USER.uid, { author:USER.email, text:scribbleEl.value, status:'draft' });
+    flash();
+  },600);
+});
+document.getElementById('submitBtn').addEventListener('click',async()=>{
+  await saveScribble(curDate, USER.uid, { author:USER.email, text:scribbleEl.value, status:'submitted' });
+  flash('✓ Submitted to supervisor');
+});
+function flash(msg){ const f=document.getElementById('savedFlash'); f.textContent=msg||'✓ Saved'; f.classList.add('show'); setTimeout(()=>f.classList.remove('show'),1500); }
+
+// ---- REVIEW (editors only) ----
+let dayScribbles=[];
+let draftEdits={};  // scribbleId -> {crew:[...], daily:[...]}
+
+function renderReview(){
+  const col=document.getElementById('reviewCol');
+  if(!CAN_EDIT){ col.style.display='none'; document.getElementById('wrap').classList.add('solo'); return; }
+  let html='<div class="card pad review"><h2>📋 Review &amp; approve — '+fmtDMY(curDate)+'</h2>';
+  if(dayScribbles.length===0){
+    html+='<div class="empty-review">No field notes submitted for this day yet.<br>When a supervisor writes and submits, their notes and a parsed draft appear here for you to check and approve.</div></div>';
+    col.innerHTML=html; return;
+  }
+  dayScribbles.forEach(sc=>{
+    const parsed = draftEdits[sc.id] || parseScribble(sc.text, DICT, STRUCT_KEYS);
+    draftEdits[sc.id]=parsed;
+    html+='<div class="subcard">'+
+      '<div class="sh"><span class="auth">'+esc(sc.author||'supervisor')+'</span>'+
+        '<span class="tag '+(sc.status||'draft')+'">'+(sc.status||'draft').toUpperCase()+'</span></div>'+
+      '<div class="rawtext">'+esc(sc.text||'(empty)')+'</div>';
+    // crew rows
+    if(parsed.crew.length){
+      html+='<div class="plabel">Crew → structures</div>';
+      parsed.crew.forEach((c,i)=>{
+        html+='<div class="parsed-row">'+
+          '<input class="'+(c.matched?'':'unmatched')+'" data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'" data-f="structure" value="'+esc(c.structure||c.rawToken)+'" placeholder="structure">'+
+          '<select data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'" data-f="trade">'+tradeOpts(c.trade)+'</select>'+
+          '<input data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'" data-f="count" type="number" min="0" value="'+esc(c.count)+'" title="people">'+
+          '<input data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'" data-f="hours" type="number" min="0" step="0.5" value="'+esc(c.hours)+'" title="hours">'+
+          '<button class="del" data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'">&times;</button>'+
+        '</div>';
+      });
+    }
+    // daily rows
+    if(parsed.daily.length){
+      html+='<div class="plabel">Daily / plant / site-wide</div>';
+      parsed.daily.forEach((d,i)=>{
+        html+='<div class="parsed-row">'+
+          '<input data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'" data-f="name" value="'+esc(d.name)+'" placeholder="name">'+
+          '<select data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'" data-f="cat">'+catOpts(d.cat)+'</select>'+
+          '<input data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'" data-f="count" type="number" min="0" value="'+esc(d.count)+'" title="people">'+
+          '<input data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'" data-f="hours" type="number" min="0" step="0.5" value="'+esc(d.hours)+'" title="hours">'+
+          '<button class="del" data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'">&times;</button>'+
+        '</div>';
+      });
+    }
+    if(!parsed.crew.length && !parsed.daily.length){
+      html+='<div class="empty-review" style="padding:16px">Nothing auto-detected — add manually or check the note.</div>';
+    }
+    html+='<div class="reviewactions">'+
+      '<button class="btn reparse" data-reparse="'+sc.id+'">↻ Re-parse</button>'+
+      '<button class="btn approve" data-approve="'+sc.id+'">✓ Approve &amp; add to day</button>'+
+      '</div>';
+    if(sc.status==='approved') html+='<div class="learnote">✓ Approved and added to the daily record.</div>';
+    html+='</div>';
+  });
+  html+='</div>';
+  col.innerHTML=html;
+  wireReview();
+}
+function tradeOpts(sel){ return ['','asbestos','demolition','scaffolding','subcontractor'].map(t=>'<option value="'+t+'"'+(t===sel?' selected':'')+'>'+(t?cap(t):'— trade —')+'</option>').join(''); }
+function catOpts(sel){ return ['asbestos','demolition','scaffolding','sitewide'].map(t=>'<option value="'+t+'"'+(t===sel?' selected':'')+'>'+cap(t)+'</option>').join(''); }
+function cap(s){ return String(s).replace(/\b\w/g,c=>c.toUpperCase()); }
+
+function wireReview(){
+  document.querySelectorAll('.parsed-row input, .parsed-row select').forEach(inp=>{
+    inp.addEventListener('change',(e)=>{
+      const {sc,t,i,f}=e.target.dataset; const val=e.target.value;
+      if(draftEdits[sc] && draftEdits[sc][t] && draftEdits[sc][t][+i]){
+        draftEdits[sc][t][+i][f]=val;
+      }
+    });
+  });
+  document.querySelectorAll('.parsed-row .del').forEach(btn=>{
+    btn.addEventListener('click',(e)=>{ const {sc,t,i}=e.target.dataset; draftEdits[sc][t].splice(+i,1); renderReview(); });
+  });
+  document.querySelectorAll('[data-reparse]').forEach(btn=>{
+    btn.addEventListener('click',(e)=>{ const id=e.target.dataset.reparse; delete draftEdits[id]; renderReview(); });
+  });
+  document.querySelectorAll('[data-approve]').forEach(btn=>{
+    btn.addEventListener('click',(e)=>approve(e.target.dataset.approve));
+  });
+}
+
+async function approve(scId){
+  const sc=dayScribbles.find(s=>s.id===scId);
+  const draft=draftEdits[scId];
+  if(!draft) return;
+  // 1) crew -> structure crewLog (add counts by trade)
+  if(draft.crew.length){
+    const live=await loadLive();
+    const crewLog=live.crewLog||{};
+    draft.crew.forEach(c=>{
+      if(!c.structure || !c.trade) return;
+      // find the pin id for this structure key via customPins/positions is complex;
+      // we store by structure key note instead -> add to a matching pin if label matches
+      // Simplest reliable path: append to a "fieldCrew" bucket keyed by structure.
+      const key=c.structure;
+      crewLog.__field=crewLog.__field||{};
+      crewLog.__field[key]=crewLog.__field[key]||{crew:{}};
+      crewLog.__field[key].crew[c.trade]=(Number(crewLog.__field[key].crew[c.trade])||0)+(Number(c.count)||0);
+      crewLog.__field[key].note=(crewLog.__field[key].note?crewLog.__field[key].note+'; ':'')+(sc.author||'')+': '+(c.note||'');
+    });
+    await saveLive({ ...live, crewLog }, USER);
+  }
+  // 2) daily -> daily activities for that date
+  if(draft.daily.length){
+    const daily=await loadDaily(curDate);
+    const entries=(daily&&daily.entries)?daily.entries:[];
+    draft.daily.forEach(d=>{
+      entries.push({cat:d.cat||'sitewide', name:d.name||'', count:d.count||'', hours:d.hours||'', note:(sc.author?sc.author+': ':'')+(d.note||'')});
+    });
+    await saveDaily(curDate, entries, USER);
+  }
+  // 3) mark scribble approved
+  await saveScribble(curDate, sc.uid, { status:'approved' });
+  // 4) learn: remember any structure token the editor corrected (rawToken -> final structure)
+  let learned=false;
+  draft.crew.forEach(c=>{
+    if(c.rawToken && c.structure && c.rawToken.toUpperCase()!==c.structure.toUpperCase()){
+      DICT=learnCorrection(DICT,'aliases', c.rawToken, c.structure); learned=true;
+    }
+  });
+  if(learned){ try{ await saveDictionary(DICT); }catch(e){} }
+  flashReview('✓ Added to '+fmtDMY(curDate));
+}
+function flashReview(msg){ /* lightweight toast via savedFlash reuse */ const f=document.getElementById('savedFlash'); if(f){ f.textContent=msg; f.classList.add('show'); setTimeout(()=>f.classList.remove('show'),1800);} }
+
+function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+// ---- nav (role-aware) ----
+function buildNav(){
+  const nav=document.getElementById('nav');
+  if(SUP && !CAN_EDIT){
+    // supervisor: scribble only
+    nav.innerHTML='<a href="scribble.html" class="active">Field Notes</a>';
+  } else {
+    nav.innerHTML=[
+      ['index.html','Asbestos Board'],['demo.html','Demo Board'],['daily.html','Daily Activities'],
+      ['scribble.html','Field Notes',true],['lookahead.html','Look-Ahead'],['overview.html','Overview'],['reports.html','Reports']
+    ].map(([h,l,a])=>'<a href="'+h+'"'+(a?' class="active"':'')+'>'+l+'</a>').join('');
+  }
+}
+
+function resubscribe(){
+  dateInput.value=curDate;
+  if(myUnsub){try{myUnsub();}catch(e){}}
+  if(dayUnsub){try{dayUnsub();}catch(e){}}
+  // my own scribble (for the pad)
+  myUnsub=watchScribble(curDate, USER.uid, (data)=>{
+    if(data && document.activeElement!==scribbleEl){ scribbleEl.value=data.text||''; }
+  });
+  // all scribbles for the day (editor review)
+  if(CAN_EDIT){
+    draftEdits={};
+    dayUnsub=watchScribblesForDay(curDate, (list)=>{ dayScribbles=list.filter(s=>s.text&&s.text.trim()); renderReview(); });
+  }
+}
+
+async function init(){
+  requireAuth(async (user, role)=>{
+    USER=user; ROLE=role; CAN_EDIT=canEdit(role); SUP=isSupervisor(role);
+    document.getElementById('userChip').textContent=(user.isAnonymous?'Guest':user.email)+' · '+role;
+    // access control: only supervisor + editors can see this page at all
+    if(!canSeeScribbles(role)){
+      document.body.innerHTML='<div style="display:flex;height:100vh;align-items:center;justify-content:center;color:var(--muted);font-family:Inter,sans-serif;">This page is for supervisors and editors only. <a href="index.html" style="color:var(--acc2);margin-left:8px;">Go to board</a></div>';
+      return;
+    }
+    document.getElementById('whoLabel').textContent=user.email;
+    buildNav();
+    try{ DICT=await loadDictionary(); }catch(e){ console.error('dict load',e); }
+    // load structure keys (asbestos + demo) so the parser can match
+    try{
+      const [s,d]=await Promise.all([
+        fetch('assets/schedule.json').then(r=>r.json()),
+        fetch('assets/demo_schedule.json').then(r=>r.json())
+      ]);
+      STRUCT_KEYS=[...Object.keys(s), ...Object.keys(d)];
+    }catch(e){ console.error('keys load',e); }
+    if(!CAN_EDIT){ document.getElementById('reviewCol').style.display='none'; document.getElementById('wrap').classList.add('solo'); }
+    resubscribe();
+  });
+}
+init();
+</script>
+</body>
+</html>
