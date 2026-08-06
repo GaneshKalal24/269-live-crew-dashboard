@@ -361,12 +361,17 @@ export function mountChatbot(opts){
 
   const wrap=document.createElement('div'); wrap.id='ardbot';
   wrap.innerHTML=`
-    <button class="ardbot-fab" id="ardbotFab" title="Ask the assistant">
-      <span class="ardbot-fab-icon">💬</span>
+    <button class="ardbot-fab" id="ardbotFab" title="Ask Ardy">
+      <span class="ardbot-orb" id="ardbotOrb">
+        <span class="orb-blob b1"></span>
+        <span class="orb-blob b2"></span>
+        <span class="orb-blob b3"></span>
+        <span class="orb-core"></span>
+      </span>
     </button>
     <div class="ardbot-panel" id="ardbotPanel">
       <div class="ardbot-head">
-        <div class="ardbot-title"><span class="ardbot-dot"></span> Ardy · site offsider</div>
+        <div class="ardbot-title"><span class="ardbot-miniorb" id="ardbotMiniOrb"><span class="mo-blob m1"></span><span class="mo-blob m2"></span><span class="mo-core"></span></span> Ardy · site offsider</div>
         <button class="ardbot-close" id="ardbotClose">×</button>
       </div>
       <div class="ardbot-body" id="ardbotBody"></div>
@@ -389,6 +394,31 @@ export function mountChatbot(opts){
   @keyframes ardbotpulse{0%{opacity:.5;transform:scale(1);}100%{opacity:0;transform:scale(1.7);}}
   .ardbot-fab.open .ardbot-fab-icon{transform:rotate(90deg) scale(.9);}
   .ardbot-fab-icon{transition:transform .3s;}
+
+  /* ===== SIRI-STYLE AURORA ORB ===== */
+  .ardbot-orb{position:relative;width:38px;height:38px;border-radius:50%;overflow:hidden;display:block;
+    box-shadow:inset 0 0 10px rgba(255,255,255,.25);}
+  .orb-blob{position:absolute;border-radius:50%;filter:blur(6px);mix-blend-mode:screen;opacity:.95;}
+  .orb-blob.b1{width:30px;height:30px;background:radial-gradient(circle,#7C5CFF,transparent 70%);top:2px;left:0px;animation:orbFloat1 3.2s ease-in-out infinite;}
+  .orb-blob.b2{width:26px;height:26px;background:radial-gradient(circle,#22D3EE,transparent 70%);top:6px;left:12px;animation:orbFloat2 2.8s ease-in-out infinite;}
+  .orb-blob.b3{width:22px;height:22px;background:radial-gradient(circle,#F472B6,transparent 70%);top:12px;left:4px;animation:orbFloat3 3.6s ease-in-out infinite;}
+  .orb-core{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.35),transparent 55%);}
+  @keyframes orbFloat1{0%,100%{transform:translate(0,0) scale(1);}33%{transform:translate(6px,4px) scale(1.15);}66%{transform:translate(-4px,6px) scale(.9);}}
+  @keyframes orbFloat2{0%,100%{transform:translate(0,0) scale(1);}33%{transform:translate(-6px,4px) scale(.9);}66%{transform:translate(4px,-4px) scale(1.2);}}
+  @keyframes orbFloat3{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(6px,-6px) scale(1.15);}}
+  /* thinking state — waves speed up + brighten */
+  .ardbot-fab.thinking .orb-blob.b1{animation-duration:1s;}
+  .ardbot-fab.thinking .orb-blob.b2{animation-duration:.85s;}
+  .ardbot-fab.thinking .orb-blob.b3{animation-duration:1.15s;}
+  .ardbot-fab.thinking .ardbot-orb{box-shadow:inset 0 0 12px rgba(255,255,255,.5),0 0 18px rgba(124,92,255,.6);}
+
+  /* mini orb in header */
+  .ardbot-miniorb{position:relative;width:16px;height:16px;border-radius:50%;overflow:hidden;display:inline-block;vertical-align:middle;}
+  .mo-blob{position:absolute;border-radius:50%;filter:blur(3px);mix-blend-mode:screen;}
+  .mo-blob.m1{width:14px;height:14px;background:radial-gradient(circle,#7C5CFF,transparent 70%);top:0;left:0;animation:orbFloat1 3s ease-in-out infinite;}
+  .mo-blob.m2{width:12px;height:12px;background:radial-gradient(circle,#22D3EE,transparent 70%);top:3px;left:5px;animation:orbFloat2 2.6s ease-in-out infinite;}
+  .mo-core{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.4),transparent 55%);}
+  .ardbot-miniorb.thinking .mo-blob.m1{animation-duration:.9s;} .ardbot-miniorb.thinking .mo-blob.m2{animation-duration:.75s;}
   .ardbot-panel{position:fixed;bottom:94px;right:22px;width:370px;max-width:calc(100vw - 32px);height:520px;max-height:calc(100vh - 130px);
     background:rgba(16,18,26,.92);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.12);border-radius:20px;z-index:9998;
     display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.55);
@@ -419,9 +449,16 @@ export function mountChatbot(opts){
   :root[data-theme="light"] .ardbot-input input{background:rgba(20,30,60,.04);border-color:rgba(20,30,60,.14);color:#161A22;}
   .ardbot-input input:focus{outline:none;border-color:#22D3EE;}
   .ardbot-input button{background:linear-gradient(135deg,#7C5CFF,#22D3EE);border:none;color:#fff;width:42px;border-radius:12px;cursor:pointer;font-size:15px;}
-  .ardbot-typing{align-self:flex-start;display:flex;gap:4px;padding:12px 14px;}
-  .ardbot-typing span{width:7px;height:7px;border-radius:50%;background:#8B93A7;animation:ardbottype 1.2s infinite;}
-  .ardbot-typing span:nth-child(2){animation-delay:.2s;} .ardbot-typing span:nth-child(3){animation-delay:.4s;}
+  .ardbot-typing{align-self:flex-start;display:flex;align-items:center;gap:3px;padding:14px 16px;height:20px;}
+  .ardbot-typing span{width:3px;border-radius:3px;background:linear-gradient(180deg,#7C5CFF,#22D3EE);animation:ardbotwave 1s ease-in-out infinite;}
+  .ardbot-typing span:nth-child(1){height:8px;animation-delay:0s;}
+  .ardbot-typing span:nth-child(2){height:16px;animation-delay:.15s;}
+  .ardbot-typing span:nth-child(3){height:22px;animation-delay:.3s;}
+  .ardbot-typing span:nth-child(4){height:16px;animation-delay:.45s;}
+  .ardbot-typing span:nth-child(5){height:10px;animation-delay:.6s;}
+  .ardbot-typing span:nth-child(6){height:18px;animation-delay:.3s;}
+  .ardbot-typing span:nth-child(7){height:8px;animation-delay:.15s;}
+  @keyframes ardbotwave{0%,100%{transform:scaleY(.4);opacity:.5;}50%{transform:scaleY(1);opacity:1;}}
   @keyframes ardbottype{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-5px);opacity:1;}}
   @media(max-width:480px){.ardbot-panel{width:calc(100vw - 24px);right:12px;bottom:88px;height:65vh;}.ardbot-fab{right:16px;bottom:16px;}}
   `;
@@ -438,7 +475,13 @@ export function mountChatbot(opts){
     const m=document.createElement('div'); m.className='ardbot-msg '+who; m.innerHTML=html; body.appendChild(m);
     body.scrollTop=body.scrollHeight; return m;
   }
-  function typing(){ const t=document.createElement('div'); t.className='ardbot-typing'; t.innerHTML='<span></span><span></span><span></span>'; body.appendChild(t); body.scrollTop=body.scrollHeight; return t; }
+  const miniOrb=document.getElementById('ardbotMiniOrb');
+  function setThinking(on){
+    fab.classList.toggle('thinking',on);
+    if(miniOrb) miniOrb.classList.toggle('thinking',on);
+  }
+  function typing(){ const t=document.createElement('div'); t.className='ardbot-typing'; t.innerHTML='<span></span><span></span><span></span><span></span><span></span><span></span><span></span>'; body.appendChild(t); body.scrollTop=body.scrollHeight; setThinking(true); return t; }
+  function stopTyping(t){ if(t) t.remove(); setThinking(false); }
 
   function renderSuggestions(){
     sugWrap.innerHTML='';
@@ -461,7 +504,7 @@ export function mountChatbot(opts){
         pendingTeach=null;
         if(opts.onLearn){ opts.onLearn(alias, pin.id); }
         const t=typing();
-        setTimeout(()=>{ t.remove(); addMsg(`Got it 👍 I'll remember that <b>“${esc(alias)}”</b> means <b>${esc(pin.label)}</b> from now on.`,'bot'); }, 400);
+        setTimeout(()=>{ stopTyping(t); addMsg(`Got it 👍 I'll remember that <b>“${esc(alias)}”</b> means <b>${esc(pin.label)}</b> from now on.`,'bot'); }, 400);
       } else {
         addMsg(`I still can't find that one. Try the exact tag like <b>B-1203</b>, or type “cancel”.`,'bot');
         if(/cancel|nevermind|never mind/i.test(text)) pendingTeach=null;
@@ -471,7 +514,7 @@ export function mountChatbot(opts){
 
     const t=typing();
     setTimeout(()=>{
-      t.remove();
+      stopTyping(t);
       let ans; try{ ans=askBot(text, getData(), ctx); }catch(e){ ans={text:"Sorry mate, something went sideways reading the data. Give it another go?"}; console.error(e); }
       // remember context for follow-up questions
       if(ans.lastPin) ctx.lastPin=ans.lastPin;
@@ -499,4 +542,11 @@ export function mountChatbot(opts){
   document.getElementById('ardbotClose').onclick=()=>{ opened=false; panel.classList.remove('open'); fab.classList.remove('open'); };
   document.getElementById('ardbotSend').onclick=()=>submit();
   input.addEventListener('keydown',e=>{ if(e.key==='Enter') submit(); });
+  // orb gently reacts while the user is typing (like Siri listening)
+  let _typeGlow=null;
+  input.addEventListener('input',()=>{
+    if(miniOrb) miniOrb.classList.add('thinking');
+    clearTimeout(_typeGlow);
+    _typeGlow=setTimeout(()=>{ if(miniOrb && !fab.classList.contains('thinking')) miniOrb.classList.remove('thinking'); }, 700);
+  });
 }
