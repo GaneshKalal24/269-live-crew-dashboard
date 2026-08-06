@@ -1,1185 +1,152 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<title>269-ARD Live Crew Position Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in — 269-ARD Live Crew Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ===== AURORA — Live Board skin (replaces index style block) ===== */
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
 :root{
-  --bg:#0A0C12; --bg2:#0E1119;
-  --glass:rgba(255,255,255,.045); --glass-2:rgba(255,255,255,.03); --glass-hi:rgba(255,255,255,.08);
-  --line:rgba(255,255,255,.09);
-  --text:#EEF1F6; --muted:#8B93A7; --faint:#5B6B7E;
-  --acc:#7C5CFF; --acc2:#22D3EE; --cyan:#22D3EE;
-  --green:#34D399; --amber:#FBBF24; --blue:#60A5FA; --grey:#6B7280; --red:#F87171;
-  --live:#34D399; --hold:#FBBF24; --sched:#60A5FA; --done:#5B6B7E;
-  --demo:#F87171; --asb:#C084FC; --scaff:#38BDF8; --sub:#FBBF24;
-  --panel:#111823; --panel-alt:#151E2B; --panel-hi:#1B2635; --border:rgba(255,255,255,.09);
-  --shadow:0 8px 30px rgba(0,0,0,.35);
-  --aurora-1:var(--acc); --aurora-2:var(--acc2);
+  --bg:#070A0F; --ink:#EEF1F6; --dim:#8B93A7; --line:rgba(255,255,255,.10);
+  --glass:rgba(255,255,255,.05); --glass-2:rgba(255,255,255,.03);
+  --acc:#7C5CFF; --acc2:#22D3EE; --green:#34D399; --red:#F87171;
 }
-:root[data-theme="light"]{
-  --bg:#EEF1F7; --bg2:#E4E9F2;
-  --glass:rgba(255,255,255,.72); --glass-2:rgba(255,255,255,.5); --glass-hi:rgba(255,255,255,.85);
-  --line:rgba(20,30,60,.1);
-  --text:#161A22; --muted:#5A6478; --faint:#94A3B8;
-  --acc:#6D4EF2; --acc2:#0BB5D6; --cyan:#0BB5D6;
-  --green:#059669; --amber:#D97706; --blue:#2563EB; --grey:#94A3B8; --red:#DC2626;
-  --live:#059669; --hold:#D97706; --sched:#2563EB; --done:#94A3B8;
-  --demo:#DC2626; --asb:#9333EA; --scaff:#0284C7; --sub:#D97706;
-  --panel:rgba(255,255,255,.7); --panel-alt:rgba(255,255,255,.5); --panel-hi:rgba(255,255,255,.9); --border:rgba(20,30,60,.1);
-  --shadow:0 8px 30px rgba(30,40,80,.12);
-  --aurora-1:#B7A6FF; --aurora-2:#7FE3F0;
-}
-
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;}
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow:hidden;transition:background .4s,color .4s;}
-
-/* ambient aurora background */
-body::before,body::after{content:'';position:fixed;border-radius:50%;filter:blur(110px);opacity:.30;pointer-events:none;z-index:0;transition:background .5s;}
-body::before{width:540px;height:540px;background:var(--aurora-1);top:-170px;left:-130px;animation:drift1 20s ease-in-out infinite;}
-body::after{width:460px;height:460px;background:var(--aurora-2);bottom:-170px;right:-110px;animation:drift2 24s ease-in-out infinite;}
-@keyframes drift1{0%,100%{transform:translate(0,0);}50%{transform:translate(90px,70px);}}
-@keyframes drift2{0%,100%{transform:translate(0,0);}50%{transform:translate(-80px,-60px);}}
-
-.app{position:relative;z-index:2;display:grid;grid-template-rows:auto auto 1fr;height:100vh;padding:12px;gap:12px;}
-
-/* titlebar */
-.titlebar{display:flex;align-items:center;gap:16px;background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:10px 18px;backdrop-filter:blur(20px);box-shadow:var(--shadow);}
-.brand{display:flex;align-items:center;gap:12px;}
-.brand .live-dot{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));box-shadow:0 4px 18px rgba(124,92,255,.45);position:relative;flex-shrink:0;}
-.brand .live-dot::after{content:'';position:absolute;inset:0;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));animation:logopulse 2.4s infinite;}
-@keyframes logopulse{0%{opacity:.5;transform:scale(1);}100%{opacity:0;transform:scale(1.55);}}
-.brand h1{font-family:'Sora',sans-serif;font-size:15px;font-weight:600;line-height:1.15;}
-.brand .sub{font-size:10.5px;color:var(--muted);}
-
-.topnav{display:flex;align-items:center;gap:4px;margin-left:8px;}
-.navlink{font-size:12.5px;font-weight:500;color:var(--muted);text-decoration:none;padding:7px 13px;border-radius:9px;transition:.2s;white-space:nowrap;}
-.navlink:hover{background:var(--glass-2);color:var(--text);}
-.navlink.active{background:linear-gradient(135deg,rgba(124,92,255,.22),rgba(34,211,238,.18));color:var(--text);box-shadow:inset 0 0 0 1px var(--line);}
-.userchip{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-left:6px;}
-
-.clock{margin-left:auto;text-align:right;font-family:'JetBrains Mono',monospace;}
-.clock .time{font-size:17px;font-weight:500;letter-spacing:.5px;}
-.clock .date{font-size:10px;color:var(--muted);}
-
-/* theme toggle button (added via JS or markup) */
-.theme-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--glass-2);color:var(--text);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:.25s;}
-.theme-btn:hover{background:var(--glass);transform:translateY(-1px);}
-
-/* buttons */
-.btn{font-family:'Inter',sans-serif;font-weight:600;font-size:12.5px;border-radius:10px;cursor:pointer;padding:8px 13px;border:1px solid var(--line);background:var(--glass-2);color:var(--text);transition:.2s;backdrop-filter:blur(10px);}
-.btn:hover{background:var(--glass-hi);transform:translateY(-1px);}
-.btn.warn{color:var(--red);border-color:rgba(248,113,113,.3);}
-.btn.warn:hover{background:rgba(248,113,113,.12);}
-.btn.export{background:linear-gradient(135deg,var(--green),#059669);color:#fff;border:none;}
-.btn.export:hover{filter:brightness(1.1);}
-.btn.logout{padding:7px 11px;font-size:12px;}
-
-/* KPI strip */
-.kpi-strip{display:flex;gap:10px;}
-.kpi{flex:1;background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:12px 16px;backdrop-filter:blur(20px);box-shadow:var(--shadow);position:relative;overflow:hidden;transition:.25s;}
-.kpi:hover{transform:translateY(-2px);border-color:var(--acc);}
-.kpi::after{content:'';position:absolute;left:0;bottom:0;height:3px;width:100%;transform:scaleX(0);transform-origin:left;transition:transform .4s;border-radius:3px;}
-.kpi:hover::after{transform:scaleX(1);}
-.kpi .val{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;line-height:1;}
-.kpi .lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:5px;}
-.kpi.live .val{color:var(--live);} .kpi.live::after{background:var(--live);}
-.kpi.hold .val{color:var(--hold);} .kpi.hold::after{background:var(--hold);}
-.kpi.upcoming .val{color:var(--sched);} .kpi.upcoming::after{background:var(--sched);}
-.kpi.done .val{color:var(--done);} .kpi.done::after{background:var(--done);}
-.kpi.crew .val{color:var(--acc2);} .kpi.crew::after{background:var(--acc2);}
-
-/* main layout */
-.main{display:flex;gap:12px;overflow:hidden;}
-.mapcol{flex:1;display:flex;flex-direction:column;min-width:0;gap:10px;}
-
-.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.toolbar .spacer{margin-left:auto;}
-.banner{font-size:12px;color:var(--amber);margin-left:4px;}
-
-/* filter + search bar */
-.filterbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:2px 2px 0;}
-.searchwrap{position:relative;display:flex;align-items:center;}
-.searchwrap .sicon{position:absolute;left:11px;color:var(--muted);font-size:14px;pointer-events:none;}
-.searchwrap input{width:210px;font-family:'Inter',sans-serif;font-size:13px;padding:8px 28px 8px 30px;border-radius:10px;border:1px solid var(--line);background:var(--glass-2);color:var(--text);transition:.2s;}
-.searchwrap input:focus{outline:none;border-color:var(--acc2);box-shadow:0 0 0 3px rgba(34,211,238,.15);width:250px;}
-.searchwrap .sclear{position:absolute;right:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;}
-.searchwrap .sclear:hover{color:var(--text);}
-.chipset{display:flex;align-items:center;gap:5px;}
-.chip-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--faint);font-weight:700;margin-right:2px;}
-.fchip{font-family:'Inter',sans-serif;font-size:11.5px;font-weight:600;padding:6px 11px;border-radius:20px;border:1px solid var(--line);background:var(--glass-2);color:var(--muted);cursor:pointer;transition:.18s;}
-.fchip:hover{color:var(--text);border-color:var(--acc2);}
-.fchip.on{color:#fff;border-color:transparent;}
-.fchip[data-status="live"].on{background:var(--green);}
-.fchip[data-status="hold"].on{background:var(--hold);}
-.fchip[data-status="upcoming"].on{background:var(--sched);}
-.fchip[data-status="done"].on{background:var(--grey);}
-.fchip.demo.on{background:var(--demo);}
-.fchip.asb.on{background:var(--asb);}
-.fchip.scaff.on{background:var(--scaff);}
-.fchip.sub.on{background:var(--sub);}
-.btn.ghost{background:transparent;border-color:var(--line);color:var(--muted);padding:6px 11px;font-size:11.5px;}
-.btn.ghost:hover{color:var(--text);background:var(--glass-2);}
-.filter-count{font-size:11.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
-
-/* dimmed pins when filtered out */
-.pin.filtered-out{opacity:.12;filter:grayscale(1);pointer-events:none;transition:opacity .3s,filter .3s;}
-.pin.search-hit .dot{outline:3px solid var(--acc2);outline-offset:3px;animation:searchpop .6s ease;}
-@keyframes searchpop{0%{transform:scale(1);}40%{transform:scale(1.6);}100%{transform:scale(1);}}
-
-/* overall % bar in panel */
-.pct-overall{margin:12px 0 4px;}
-.pct-overall .pct-head{display:flex;justify-content:space-between;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700;margin-bottom:6px;}
-.pct-overall .pct-head b{font-family:'JetBrains Mono',monospace;color:var(--acc2);font-size:13px;}
-.pct-overall .pbar{height:8px;background:var(--glass-2);border-radius:5px;overflow:hidden;border:1px solid var(--line);}
-.pct-overall .pbar span{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:5px;box-shadow:0 0 10px rgba(34,211,238,.4);transition:width .8s cubic-bezier(.2,.9,.25,1);}
-
-/* stage / map */
-.stage{position:relative;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#000;flex:1;box-shadow:var(--shadow);touch-action:none;}
-.viewport{position:relative;transform-origin:0 0;will-change:transform;}
-.viewport img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none;}
-.stage.calibrating{cursor:crosshair;}
-.stage.panning{cursor:grabbing;}
-.stage:not(.calibrating):not(.addmode){cursor:grab;}
-
-.north{position:absolute;top:14px;right:14px;z-index:8;background:var(--glass);border:1px solid var(--line);border-radius:10px;padding:6px 9px 7px;text-align:center;backdrop-filter:blur(10px);}
-.north .n-lbl{font-family:'Sora',sans-serif;font-size:10.5px;color:var(--text);letter-spacing:1px;margin-top:1px;}
-.north svg polygon{fill:var(--text);}
-
-.zoom-controls{position:absolute;bottom:14px;right:14px;z-index:9;display:flex;flex-direction:column;gap:5px;}
-.zoom-controls button{width:36px;height:36px;border-radius:11px;border:1px solid var(--line);background:var(--glass);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(12px);font-weight:600;transition:.2s;}
-.zoom-controls button:hover{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;transform:translateY(-1px);}
-.zoom-controls .zoom-level{font-size:10px;text-align:center;color:var(--muted);font-family:'JetBrains Mono',monospace;}
-
-/* pins */
-.pin{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:5;}
-.pin .ring{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
-.pin .dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(10,12,18,.85);transition:.3s;}
-.pin.status-live .dot{background:var(--live);box-shadow:0 0 16px var(--live);}
-.pin.status-live .ring{animation:ringpulse 1.6s infinite;}
-.pin.status-hold .dot{background:var(--hold);box-shadow:0 0 16px var(--hold);}
-.pin.status-hold .ring{animation:ringpulse-amber 2s infinite;}
-.pin.status-upcoming .dot{background:var(--sched);}
-.pin.status-done .dot{background:var(--grey);}
-.pin.status-none .dot{background:transparent;border-style:dashed;border-color:rgba(255,255,255,.7);}
-@keyframes ringpulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,.5);}70%{box-shadow:0 0 0 14px rgba(52,211,153,0);}100%{box-shadow:0 0 0 0 rgba(52,211,153,0);}}
-@keyframes ringpulse-amber{0%{box-shadow:0 0 0 0 rgba(251,191,36,.5);}70%{box-shadow:0 0 0 12px rgba(251,191,36,0);}100%{box-shadow:0 0 0 0 rgba(251,191,36,0);}}
-.pin:hover .dot{transform:scale(1.3);}
-.pin.selected .dot{transform:scale(1.3);outline:2px solid #fff;outline-offset:3px;}
-.pin .crew-badge{position:absolute;top:-9px;left:14px;background:var(--panel);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;border-radius:999px;padding:1px 6px;border:1px solid var(--line);white-space:nowrap;z-index:2;}
-.pin .htag{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--glass);color:var(--text);font-size:10.5px;padding:2px 7px;border-radius:6px;border:1px solid var(--line);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .12s;z-index:6;}
-.pin:hover .htag{opacity:1;}
-.pin.dragging{cursor:grabbing;z-index:20;}
-
-/* bubble popup */
-.bubble{position:absolute;z-index:15;background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:12px 14px;width:236px;box-shadow:var(--shadow);backdrop-filter:blur(24px);font-size:12.5px;}
-.bubble h3{margin:6px 0;font-size:14px;font-family:'Sora',sans-serif;}
-.bubble .row{display:flex;justify-content:space-between;margin:3px 0;color:var(--muted);gap:8px;}
-.bubble .row b{color:var(--text);font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-align:right;}
-.bubble .notes{font-size:11.5px;color:var(--muted);margin-top:6px;max-height:42px;overflow:hidden;}
-.bubble button{width:100%;margin-top:9px;}
-.bubble .close{position:absolute;top:6px;right:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;}
-
-/* legend */
-.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);align-items:center;padding:2px 4px;}
-.legend .sw{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:-1px;}
-
-/* right detail panel */
-.panel{width:var(--panel-w,390px);flex-shrink:0;background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:18px;overflow-y:auto;backdrop-filter:blur(20px);box-shadow:var(--shadow);}
-.panel-resize{width:7px;flex-shrink:0;cursor:col-resize;border-radius:4px;background:transparent;transition:background .15s;align-self:stretch;margin:0 -2px;position:relative;}
-.panel-resize::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:3px;height:38px;border-radius:3px;background:var(--line);transition:background .15s;}
-.panel-resize:hover::before,.panel-resize.dragging::before{background:var(--acc2);}
-.panel-resize:hover,.panel-resize.dragging{background:rgba(34,211,238,.08);}
-.panel-empty{color:var(--muted);font-size:13px;text-align:center;padding:60px 10px;line-height:1.6;}
-.panel h2{font-family:'Sora',sans-serif;font-size:18px;margin:6px 0 2px;}
-.panel .overall{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);margin-bottom:12px;}
-
-/* status pills */
-.status-pill{font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:6px;}
-.status-pill.live{background:rgba(52,211,153,.15);color:var(--live);}
-.status-pill.hold{background:rgba(251,191,36,.15);color:var(--hold);}
-.status-pill.upcoming{background:rgba(96,165,250,.15);color:var(--sched);}
-.status-pill.done{background:rgba(91,107,126,.15);color:var(--done);}
-.status-pill.none{background:rgba(91,107,126,.15);color:var(--muted);}
-.status-pill.live::before,.status-pill.hold::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;animation:pulse2 1.5s infinite;}
-@keyframes pulse2{50%{opacity:.4;}}
-
-/* section titles in panel */
-.sec-title{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;margin:16px 0 6px;display:flex;justify-content:space-between;align-items:center;}
-.sec-title .add-link{color:var(--acc2);cursor:pointer;font-size:11px;text-transform:none;letter-spacing:0;}
-.sec-title .add-link:hover{text-decoration:underline;}
-
-/* activity table */
-.act-table{width:100%;border-collapse:collapse;}
-.act-table th{text-align:left;color:var(--muted);font-weight:600;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;padding:5px 3px;border-bottom:1px solid var(--line);}
-.act-table td{padding:4px 3px;border-bottom:1px solid var(--glass-2);vertical-align:middle;}
-.act-table tr.current{background:rgba(52,211,153,.08);}
-.act-table input.act-name{width:100%;background:transparent;border:1px solid transparent;color:var(--text);font-family:'Inter',sans-serif;font-size:11.5px;padding:3px 4px;border-radius:6px;}
-.act-table input.act-name:hover,.act-table input.act-name:focus{background:var(--glass-2);border-color:var(--line);outline:none;}
-.act-table input.act-date{width:92px;background:var(--glass-2);border:1px solid var(--line);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:3px 4px;border-radius:6px;}
-.act-table .row-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px;}
-.act-table .row-del:hover{color:var(--red);}
-.act-badge{font-size:9px;font-weight:700;padding:1px 6px;border-radius:999px;}
-.act-badge.now{background:rgba(52,211,153,.15);color:var(--live);}
-.act-badge.done{background:rgba(91,107,126,.15);color:var(--done);}
-.act-badge.up{background:rgba(96,165,250,.15);color:var(--sched);}
-
-/* panel form controls */
-.panel label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin:12px 0 5px;text-transform:uppercase;letter-spacing:.3px;}
-.panel select,.panel input[type=number],.panel input[type=text],.panel textarea{width:100%;font-family:'Inter',sans-serif;font-size:13px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:var(--glass-2);color:var(--text);}
-.panel textarea{min-height:64px;resize:vertical;}
-
-/* crew grid */
-.crew-grid{display:grid;grid-template-columns:1fr 70px;gap:6px 8px;align-items:center;margin-top:4px;}
-.crew-grid .crew-type{display:flex;align-items:center;gap:7px;font-size:12.5px;}
-.crew-grid .crew-type .tsw{width:9px;height:9px;border-radius:3px;}
-.crew-grid input{padding:6px 8px;text-align:center;}
-.crew-total{display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:12.5px;}
-.crew-total b{font-family:'JetBrains Mono',monospace;color:var(--acc2);}
-
-.actions{display:flex;gap:8px;margin-top:14px;}
-.actions button{flex:1;}
-.updated-line{font-size:11px;color:var(--muted);margin-top:8px;font-family:'JetBrains Mono',monospace;}
-.readonly-note{margin-top:16px;padding:10px 12px;border-radius:10px;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.25);color:var(--acc2);font-size:11.5px;text-align:center;}
-
-::-webkit-scrollbar{width:9px;height:9px;}
-::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;}
-::-webkit-scrollbar-track{background:transparent;}
-
-@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important;}}
-
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:100vh;position:relative;}
+.bgfx{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none;}
+.blob{position:absolute;border-radius:50%;filter:blur(100px);opacity:.42;mix-blend-mode:screen;}
+.blob.b1{width:560px;height:560px;background:#7C5CFF;top:-160px;left:-120px;animation:drift1 22s ease-in-out infinite;}
+.blob.b2{width:500px;height:500px;background:#22D3EE;bottom:-180px;right:-120px;animation:drift2 26s ease-in-out infinite;}
+.blob.b3{width:420px;height:420px;background:#EC4899;top:40%;left:55%;opacity:.28;animation:drift3 30s ease-in-out infinite;}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(120px,90px) scale(1.1);}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-100px,-80px) scale(1.15);}}
+@keyframes drift3{0%,100%{transform:translate(0,0);}33%{transform:translate(-90px,60px);}66%{transform:translate(70px,-70px);}}
+.grid{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:52px 52px;-webkit-mask-image:radial-gradient(ellipse at 50% 50%,#000 20%,transparent 72%);mask-image:radial-gradient(ellipse at 50% 50%,#000 20%,transparent 72%);
+  animation:gridmove 24s linear infinite;}
+@keyframes gridmove{from{background-position:0 0;}to{background-position:52px 52px;}}
+.particles{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.particles i{position:absolute;bottom:-10px;width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.5);box-shadow:0 0 6px rgba(124,92,255,.8);animation:rise linear infinite;}
+@keyframes rise{0%{transform:translateY(0);opacity:0;}10%{opacity:1;}100%{transform:translateY(-104vh);opacity:0;}}
+.sweep{position:fixed;top:0;left:0;right:0;height:2px;z-index:1;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(34,211,238,.6),transparent);animation:sweep 7s linear infinite;}
+@keyframes sweep{0%{transform:translateY(-4px);}100%{transform:translateY(100vh);}}
+.card{position:relative;z-index:3;width:380px;max-width:92vw;padding:34px 30px 28px;
+  background:var(--glass);border:1px solid var(--line);border-radius:20px;
+  backdrop-filter:blur(26px);box-shadow:0 30px 80px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08);
+  animation:cardin .8s cubic-bezier(.2,.9,.25,1);}
+@keyframes cardin{from{opacity:0;transform:translateY(24px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+.card::before{content:'';position:absolute;inset:-1px;border-radius:20px;padding:1px;
+  background:linear-gradient(135deg,rgba(124,92,255,.6),rgba(34,211,238,.5),transparent 60%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;opacity:.8;}
+.brandrow{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--acc),var(--acc2));
+  box-shadow:0 8px 26px rgba(124,92,255,.5);position:relative;flex-shrink:0;}
+.logo::after{content:'';position:absolute;inset:0;border-radius:12px;background:linear-gradient(135deg,var(--acc),var(--acc2));animation:lpulse 2.4s infinite;}
+@keyframes lpulse{0%{opacity:.55;transform:scale(1);}100%{opacity:0;transform:scale(1.6);}}
+h2{font-family:'Sora',sans-serif;font-size:19px;font-weight:600;line-height:1.1;}
+.login-subtitle{color:var(--dim);font-size:12.5px;margin:2px 0 22px;}
+.form-group{margin-bottom:14px;}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);font-weight:600;margin-bottom:6px;}
+input{width:100%;font-family:'Inter',sans-serif;font-size:14px;padding:11px 13px;border-radius:11px;
+  border:1px solid var(--line);background:var(--glass-2);color:var(--ink);transition:.2s;}
+input::placeholder{color:#5A6478;}
+input:focus{outline:none;border-color:var(--acc2);box-shadow:0 0 0 3px rgba(34,211,238,.15);background:rgba(255,255,255,.06);}
+.btn-primary{width:100%;margin-top:8px;font-family:'Inter',sans-serif;font-weight:600;font-size:14px;padding:12px;border-radius:11px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;position:relative;overflow:hidden;transition:.2s;}
+.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,92,255,.4);}
+.btn-primary::after{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);animation:shine 3.5s ease-in-out infinite;}
+@keyframes shine{0%,60%{left:-60%;}100%{left:120%;}}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0 14px;color:var(--dim);font-size:11.5px;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line);}
+.btn-secondary{width:100%;padding:11px;border-radius:11px;font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;cursor:pointer;
+  background:transparent;border:1px solid var(--line);color:var(--ink);transition:.2s;}
+.btn-secondary:hover{background:rgba(255,255,255,.06);border-color:var(--acc2);}
+.error-msg{color:var(--red);font-size:12.5px;margin-bottom:12px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);padding:9px 11px;border-radius:9px;}
+.hint{color:var(--dim);font-size:11px;line-height:1.5;margin-top:16px;text-align:center;}
+.foot{position:fixed;bottom:16px;left:0;right:0;text-align:center;z-index:3;color:#4A5568;font-size:10.5px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;}}
 </style>
 </head>
 <body>
-<div class="app">
+  <div class="bgfx"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+  <div class="grid"></div>
+  <div class="particles" id="particles"></div>
+  <div class="sweep"></div>
 
-  <div class="titlebar">
-    <div class="brand">
-      <span class="live-dot"></span>
-      <div>
-        <h1>269-ARD Live Crew Position Dashboard</h1>
-        <div class="sub">Altona Refinery Demolition &mdash; Asbestos, Scaffold &amp; Demolition Work Fronts <span style="opacity:.5">· build v5</span></div>
+  <div class="card">
+    <div class="brandrow">
+      <div class="logo"></div>
+      <div><h2>269-ARD Dashboard</h2><div class="login-subtitle">Altona Refinery Demolition — Crew Board</div></div>
+    </div>
+    <div id="error-msg" class="error-msg" style="display:none;"></div>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" required placeholder="you@company.com" autocomplete="username">
       </div>
-    </div>
-    <div class="topnav">
-      <a class="navlink active" href="index.html">Asbestos Board</a>
-      <a class="navlink" href="demo.html">Demo Board</a>
-      <a class="navlink" href="daily.html">Daily Activities</a>
-      <a class="navlink" href="scribble.html" id="scribbleLink">Field Notes</a>
-      <a class="navlink" href="lookahead.html">Look-Ahead</a>
-      <a class="navlink" href="overview.html">Overview</a>
-      <a class="navlink" href="reports.html" id="reportsLink">Reports</a>
-      <span class="userchip" id="userChip">…</span>
-      <button class="theme-btn" id="themeBtn" title="Toggle day/night">☀</button>
-      <button class="btn logout" id="logoutBtn">Sign out</button>
-    </div>
-    <div class="clock">
-      <div class="time" id="clockTime">--:--:--</div>
-      <div class="date" id="clockDate">-</div>
-    </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn-primary">Sign In</button>
+    </form>
+    <div class="divider"><span>or</span></div>
+    <button id="guest-btn" class="btn-secondary">👁  Continue as Guest (view only)</button>
+    <div class="hint">Guests can view the live board and look-ahead, but can't change anything or open Reports.</div>
   </div>
-
-  <div class="kpi-strip">
-    <div class="kpi live"><div class="val" id="kpiLive">0</div><div class="lbl">Live now</div></div>
-    <div class="kpi hold"><div class="val" id="kpiHold">0</div><div class="lbl">On hold</div></div>
-    <div class="kpi upcoming"><div class="val" id="kpiUpcoming">0</div><div class="lbl">Scheduled</div></div>
-    <div class="kpi done"><div class="val" id="kpiDone">0</div><div class="lbl">Finished</div></div>
-    <div class="kpi crew"><div class="val" id="kpiCrew">0</div><div class="lbl">Crew on site</div></div>
-  </div>
-
-  <div class="main">
-    <div class="mapcol">
-      <div class="toolbar">
-        <button class="btn" id="calibrateBtn">🔧 Adjust pin positions</button>
-        <button class="btn" id="addPinBtn">+ Add work front</button>
-        <button class="btn warn" id="resetPositionsBtn">Reset positions</button>
-        <span class="banner" id="modeBanner"></span>
-        <span class="spacer"></span>
-        <button class="btn" id="lockBtn">🔒 Lock end-of-day report</button>
-        <button class="btn" id="summaryBtn">🖨 Daily summary</button>
-        <button class="btn export" id="exportBtn">⭳ Export CSV</button>
-      </div>
-      <div class="filterbar" id="filterbar">
-        <div class="searchwrap">
-          <span class="sicon">⌕</span>
-          <input type="text" id="searchInput" placeholder="Search structure…" autocomplete="off">
-          <button class="sclear" id="searchClear" style="display:none;">×</button>
-        </div>
-        <div class="chipset" id="statusChips">
-          <span class="chip-lbl">Status</span>
-          <button class="fchip" data-status="live">Live</button>
-          <button class="fchip" data-status="hold">On Hold</button>
-          <button class="fchip" data-status="upcoming">Scheduled</button>
-          <button class="fchip" data-status="done">Finished</button>
-        </div>
-        <div class="chipset" id="tradeChips">
-          <span class="chip-lbl">Trade</span>
-          <button class="fchip demo" data-trade="demolition">Demolition</button>
-          <button class="fchip asb" data-trade="asbestos">Asbestos</button>
-          <button class="fchip scaff" data-trade="scaffolding">Scaffolding</button>
-          <button class="fchip sub" data-trade="subcontractor">Sub</button>
-        </div>
-        <button class="btn ghost" id="clearFilters" style="display:none;">Clear all</button>
-        <span class="filter-count" id="filterCount"></span>
-      </div>
-      <div class="stage" id="stage">
-        <div class="viewport" id="viewport">
-          <img id="bgImg" src="assets/site_bg.jpg" alt="Site aerial">
-        </div>
-        <div class="north">
-          <svg width="24" height="32" viewBox="0 0 26 34"><polygon points="13,0 22,26 13,20 4,26" fill="#fff"/></svg>
-          <div class="n-lbl">N</div>
-        </div>
-        <div class="zoom-controls">
-          <button id="zoomInBtn" title="Zoom in">+</button>
-          <div class="zoom-level" id="zoomLevel">100%</div>
-          <button id="zoomOutBtn" title="Zoom out">−</button>
-          <button id="zoomResetBtn" title="Reset view" style="font-size:13px;">⤢</button>
-        </div>
-      </div>
-      <div class="legend">
-        <span><span class="sw" style="background:var(--green)"></span>Live now</span>
-        <span><span class="sw" style="background:var(--amber)"></span>On hold</span>
-        <span><span class="sw" style="background:var(--blue)"></span>Scheduled</span>
-        <span><span class="sw" style="background:var(--grey)"></span>Finished</span>
-        <span><span class="sw" style="background:transparent;border:1.5px dashed rgba(255,255,255,.7)"></span>No schedule</span>
-        <span style="margin-left:auto;">Badge = crew on that front</span>
-      </div>
-    </div>
-
-    <div class="panel-resize" id="panelResize" title="Drag to resize"></div>
-    <aside class="panel" id="detailPanel">
-      <div class="panel-empty">Click a pin on the map to see its full activity schedule,<br>edit dates, and log crew here.</div>
-    </aside>
-  </div>
-</div>
+  <div class="foot">269-ARD · LIVE CREW POSITION SYSTEM</div>
 
 <script type="module">
-import { requireAuth, doLogout, loadLive, watchLive, saveLive, saveSnapshot, loadDaily } from "./js/app-common.js";
+  import { auth } from "./js/firebase-config.js";
+  import { signInWithEmailAndPassword, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// ---- Day/night theme (persisted) ----
-(function initTheme(){
-  const saved = localStorage.getItem('ard-theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', saved);
-})();
-function updateThemeBtn(){
-  const t = document.documentElement.getAttribute('data-theme') || 'dark';
-  const b = document.getElementById('themeBtn');
-  if(b) b.textContent = t === 'light' ? '☾' : '☀';
-}
-function toggleTheme(){
-  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
-  const next = cur === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('ard-theme', next);
-  updateThemeBtn();
-}
-let DEFAULT_PINS = [];
-let BASE_SCHEDULE = {};
+  (function(){
+    const box=document.getElementById('particles');
+    for(let i=0;i<26;i++){
+      const p=document.createElement('i');
+      p.style.left=Math.random()*100+'%';
+      const dur=6+Math.random()*10;
+      p.style.animationDuration=dur+'s';
+      p.style.animationDelay=(-Math.random()*dur)+'s';
+      const sz=2+Math.random()*2.5; p.style.width=p.style.height=sz+'px';
+      p.style.opacity=.3+Math.random()*.5;
+      box.appendChild(p);
+    }
+  })();
 
-const CREW_TYPES = [
-  {key:'demolition', label:'Demolition', color:'#EF4444'},
-  {key:'asbestos', label:'Asbestos', color:'#A855F7'},
-  {key:'scaffolding', label:'Scaffolding', color:'#0EA5E9'},
-  {key:'subcontractor', label:'Subcontractor (special)', color:'#F59E0B'},
-];
+  onAuthStateChanged(auth,(user)=>{ if(user) window.location.href='index.html'; });
 
-let positions = {};
-let crewLog = {};
-let statusOverrides = {};
-let customPins = [];
-let scheduleEdits = {};   // schedKey -> [{a,s,f}] overrides the base schedule
-
-let calibrating=false, addMode=false, draggingId=null, selectedId=null;
-
-let CURRENT_USER = null;
-let USER_ROLE = 'viewer';
-let CAN_EDIT = false;   
-let CAN_DELETE = false; 
-let LIVE_CACHE = {};
-
-function pad(n){ return String(n).padStart(2,'0'); }
-function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
-function updateClock(){
-  const d=new Date();
-  document.getElementById('clockTime').textContent = pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
-  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  document.getElementById('clockDate').textContent = days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
-}
-setInterval(updateClock,1000);
-const TODAY = todayStr();
-
-async function pushLive(){
-  if(!CAN_EDIT) return;
-  await saveLive({
-    positions, crewLog, statusOverrides, customPins, scheduleEdits
-  }, CURRENT_USER);
-}
-let _saveTimer=null;
-function safeSet(k,v){
-  clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(pushLive, 250);
-}
-function safeGet(){ return null; }
-
-function allPins(){ return [...DEFAULT_PINS, ...customPins]; }
-function getPos(pin){ return positions[pin.id] || {x:pin.x, y:pin.y}; }
-function findPin(id){ return allPins().find(p=>p.id===id); }
-
-function activityRows(schedKey){
-  if(!schedKey) return [];
-  if(scheduleEdits[schedKey]) return scheduleEdits[schedKey];
-  if(schedKey in BASE_SCHEDULE) return BASE_SCHEDULE[schedKey];
-  return [];
-}
-function pinSchedKey(pin){ return pin.sched || ('custom:'+pin.id); }
-
-function scheduleStatus(pin){
-  const acts = activityRows(pinSchedKey(pin));
-  if(!acts || acts.length===0) return {state:'none', activity:null};
-  const sorted = [...acts].filter(a=>a.s && a.f).sort((x,y)=>x.s.localeCompare(y.s));
-  if(sorted.length===0) return {state:'none', activity:null};
-  for(const a of sorted){ if(a.s<=TODAY && TODAY<=a.f) return {state:'live', activity:a}; }
-  if(TODAY < sorted[0].s) return {state:'upcoming', activity:sorted[0]};
-  if(TODAY > sorted[sorted.length-1].f) return {state:'done', activity:sorted[sorted.length-1]};
-  return {state:'upcoming', activity:null};
-}
-function effectiveStatus(pin){
-  const auto = scheduleStatus(pin);
-  const ov = statusOverrides[pin.id] || 'auto';
-  if(ov==='live') return {state:'live', activity:auto.activity, override:true};
-  if(ov==='hold') return {state:'hold', activity:auto.activity, override:true};
-  if(ov==='notlive') return {state: auto.state==='none'?'none':'done', activity:auto.activity, override:true};
-  return {...auto, override:false};
-}
-function crewTotal(id){
-  const log = crewLog[id];
-  if(!log || !log.crew) return 0;
-  return CREW_TYPES.reduce((s,t)=> s + (Number(log.crew[t.key])||0), 0);
-}
-
-function fmtDate(s){ if(!s) return '—'; const [y,m,d]=s.split('-'); return d+'/'+m+'/'+y.slice(2); }
-function fmtTs(ts){ if(!ts) return null; const d=new Date(ts);
-  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear()+', '+pad(d.getHours())+':'+pad(d.getMinutes()); }
-const STATUS_LABEL = {live:'LIVE NOW',hold:'ON HOLD',upcoming:'SCHEDULED',done:'FINISHED',none:'NO SCHEDULE'};
-
-// ---- Filters & search state ----
-let activeStatusFilters = new Set();
-let activeTradeFilters = new Set();
-let searchTerm = '';
-
-function overallPct(pin){
-  const acts = activityRows(pinSchedKey(pin));
-  if(!acts || acts.length===0) return null;
-  const vals = acts.map(a=> Number(a.p)||0);
-  return Math.round(vals.reduce((s,v)=>s+v,0)/vals.length);
-}
-function pinTrades(pin){
-  const log = crewLog[pin.id];
-  const out = new Set();
-  if(log && log.crew){ CREW_TYPES.forEach(t=>{ if((Number(log.crew[t.key])||0)>0) out.add(t.key); }); }
-  return out;
-}
-function pinMatchesFilter(pin){
-  const st = effectiveStatus(pin);
-  if(activeStatusFilters.size>0 && !activeStatusFilters.has(st.state)) return false;
-  if(activeTradeFilters.size>0){
-    const trades = pinTrades(pin);
-    let any=false; activeTradeFilters.forEach(t=>{ if(trades.has(t)) any=true; });
-    if(!any) return false;
-  }
-  return true;
-}
-function anyFilterActive(){ return activeStatusFilters.size>0 || activeTradeFilters.size>0; }
-
-
-function updateKPIs(){
-  let live=0,hold=0,up=0,done=0,crew=0;
-  allPins().forEach(pin=>{
-    const st=effectiveStatus(pin);
-    if(st.state==='live')live++; else if(st.state==='hold')hold++; else if(st.state==='upcoming')up++; else if(st.state==='done')done++;
-    if(st.state==='live'||st.state==='hold') crew+=crewTotal(pin.id);
-  });
-  document.getElementById('kpiLive').textContent=live;
-  document.getElementById('kpiHold').textContent=hold;
-  document.getElementById('kpiUpcoming').textContent=up;
-  document.getElementById('kpiDone').textContent=done;
-  document.getElementById('kpiCrew').textContent=crew;
-}
-
-function render(){
-  const stage=document.getElementById('stage');
-  const viewport=document.getElementById('viewport');
-  viewport.querySelectorAll('.pin, .bubble').forEach(e=>e.remove());
-  stage.classList.toggle('calibrating', calibrating);
-
-  allPins().forEach(pin=>{
-    const pos=getPos(pin); const st=effectiveStatus(pin); const total=crewTotal(pin.id);
-    const el=document.createElement('div');
-    const dimmed = anyFilterActive() && !pinMatchesFilter(pin);
-    el.className='pin status-'+st.state+(pin.id===selectedId?' selected':'')+(dimmed?' filtered-out':'');
-    el.style.left=pos.x+'%'; el.style.top=pos.y+'%'; el.dataset.id=pin.id;
-
-    const ring=document.createElement('div'); ring.className='ring';
-    const dot=document.createElement('div'); dot.className='dot'; ring.appendChild(dot); el.appendChild(ring);
-
-    const htag=document.createElement('div'); htag.className='htag'; htag.textContent=pin.label; el.appendChild(htag);
-
-    if(total>0){ const b=document.createElement('div'); b.className='crew-badge'; b.textContent=total; el.appendChild(b); }
-
-    el.addEventListener('mousedown',(e)=>onPinDown(e,pin.id));
-    el.addEventListener('touchstart',(e)=>onPinDown(e,pin.id),{passive:false});
-    el.addEventListener('click',(e)=>{ if(calibrating||addMode)return; e.stopPropagation(); selectedId=pin.id; showBubble(pin,getPos(pin)); showPanel(pin); render(); });
-    viewport.appendChild(el);
-  });
-  if(selectedId){ const p=findPin(selectedId); if(p) showBubble(p,getPos(p)); }
-  updateKPIs();
-}
-
-function showBubble(pin,pos){
-  const stage=document.getElementById('stage');
-  const viewport=document.getElementById('viewport');
-  viewport.querySelectorAll('.bubble').forEach(e=>e.remove());
-  stage.querySelectorAll('.bubble').forEach(e=>e.remove());
-  const st=effectiveStatus(pin); const log=crewLog[pin.id]||{}; const acts=activityRows(pinSchedKey(pin));
-  const sorted=[...acts].filter(a=>a.s&&a.f).sort((x,y)=>x.s.localeCompare(y.s));
-  const oStart=sorted.length?fmtDate(sorted[0].s):'—'; const oFin=sorted.length?fmtDate(sorted[sorted.length-1].f):'—';
-  const total=crewTotal(pin.id);
-  const b=document.createElement('div'); b.className='bubble';
-  let left=pos.x, top=pos.y;
-  b.style.left=left+'%'; b.style.top=top+'%';
-  b.style.transformOrigin='top left';
-  b.style.transform='scale('+(1/zoomState.scale)+')';
-  b.style.marginLeft=(14/zoomState.scale)+'px';
-  b.innerHTML=`
-    <button class="close">&times;</button>
-    <span class="status-pill ${st.state}">${STATUS_LABEL[st.state]}</span>
-    <h3>${pin.label}</h3>
-    <div class="row"><span>Structure span</span><b>${oStart} &rarr; ${oFin}</b></div>
-    <div class="row"><span>Current activity</span><b>${st.activity?st.activity.a:'&mdash;'}</b></div>
-    <div class="row"><span>Crew on front</span><b>${total}</b></div>
-    ${log.notes?`<div class="notes">${log.notes.replace(/</g,'&lt;')}</div>`:''}
-    <button class="btn active" id="bDetail">Full details &amp; log crew &rarr;</button>`;
-  viewport.appendChild(b);
-  b.querySelector('.close').onclick=()=>{ b.remove(); selectedId=null; render(); };
-  b.querySelector('#bDetail').onclick=()=>showPanel(pin);
-}
-
-function showPanel(pin){
-  const panel=document.getElementById('detailPanel');
-  const st=effectiveStatus(pin); const log=crewLog[pin.id]||{crew:{},notes:'',updatedAt:null};
-  const override=statusOverrides[pin.id]||'auto';
-  const schedKey=pinSchedKey(pin);
-  const acts=activityRows(schedKey);
-  const sorted=[...acts].sort((x,y)=>(x.s||'').localeCompare(y.s||''));
-  const oStart=sorted.length&&sorted[0].s?fmtDate(sorted[0].s):'—';
-  const oFin=sorted.length&&sorted[sorted.length-1].f?fmtDate(sorted[sorted.length-1].f):'—';
-
-  // ---------- READ-ONLY PANEL (guests + viewers) ----------
-  if(!CAN_EDIT){
-    let rlist='';
-    acts.forEach((a)=>{
-      let badge='<span class="act-badge up">Upcoming</span>';
-      if(a.s&&a.f&&a.s<=TODAY&&TODAY<=a.f){ badge='<span class="act-badge now">Now</span>'; }
-      else if(a.f&&a.f<TODAY){ badge='<span class="act-badge done">Done</span>'; }
-      rlist+=`<tr><td>${(a.a||'').replace(/</g,'&lt;')}</td><td class="dt">${a.s?fmtDate(a.s):'—'}</td><td class="dt">${a.f?fmtDate(a.f):'—'}</td><td>${badge}</td></tr>`;
-    });
-    let crewView='';
-    let totalCrew=0;
-    CREW_TYPES.forEach(t=>{
-      const v=(log.crew&&log.crew[t.key])||0;
-      if(Number(v)>0){ totalCrew+=Number(v); crewView+=`<div class="crew-type"><span class="tsw" style="background:${t.color}"></span>${t.label}</div><div style="text-align:right;font-family:'JetBrains Mono',monospace;">${v}</div>`; }
-    });
-    const op=overallPct(pin);
-    panel.innerHTML=`
-      <span class="status-pill ${st.state}">${STATUS_LABEL[st.state]}</span>
-      <h2>${pin.label}</h2>
-      <div class="overall">${oStart} &rarr; ${oFin}${!acts.length?' &middot; no activities yet':''}</div>
-      ${op===null?'':`<div class="pct-overall"><div class="pct-head"><span>Overall progress</span><b>${op}%</b></div><div class="pbar"><span style="width:${op}%"></span></div></div>`}
-      <div class="sec-title">Activities</div>
-      <table class="act-table">
-        <thead><tr><th>Activity</th><th>Start</th><th>Finish</th><th>State</th></tr></thead>
-        <tbody>${rlist||'<tr><td colspan="4" style="color:var(--muted);font-size:11.5px;padding:8px 3px;">No activities scheduled.</td></tr>'}</tbody>
-      </table>
-      <div class="sec-title">Crew on this front</div>
-      ${crewView?`<div class="crew-grid">${crewView}</div><div class="crew-total"><span>Total crew</span><b>${totalCrew}</b></div>`:'<div style="color:var(--muted);font-size:12px;padding:4px 0;">No crew logged.</div>'}
-      ${log.notes?`<div class="sec-title">Notes</div><div style="font-size:12.5px;color:var(--text);line-height:1.5;">${(log.notes||'').replace(/</g,'&lt;')}</div>`:''}
-      ${log.updatedAt?`<div class="updated-line">Last updated: ${fmtTs(log.updatedAt)}</div>`:''}
-      <div class="readonly-note">👁 View-only access — sign in as an editor to make changes.</div>
-    `;
-    return;
-  }
-
-  // ---------- EDITABLE PANEL (editor / engineer) ----------
-  let rows='';
-  acts.forEach((a,i)=>{
-    let cls='',badge='<span class="act-badge up">Upcoming</span>';
-    if(a.s&&a.f&&a.s<=TODAY&&TODAY<=a.f){ cls='current'; badge='<span class="act-badge now">Now</span>'; }
-    else if(a.f&&a.f<TODAY){ badge='<span class="act-badge done">Done</span>'; }
-    rows+=`<tr class="${cls}">
-      <td><input class="act-name" data-i="${i}" value="${(a.a||'').replace(/"/g,'&quot;')}"></td>
-      <td><input class="act-date" type="date" data-i="${i}" data-f="s" value="${a.s||''}"></td>
-      <td><input class="act-date" type="date" data-i="${i}" data-f="f" value="${a.f||''}"></td>
-      <td>${badge}</td>
-      <td>${CAN_DELETE ? `<button class="row-del" data-i="${i}">&times;</button>` : ''}</td>
-    </tr>`;
-  });
-
-  let crewInputs='';
-  CREW_TYPES.forEach(t=>{
-    const v=(log.crew&&log.crew[t.key])||'';
-    crewInputs+=`<div class="crew-type"><span class="tsw" style="background:${t.color}"></span>${t.label}</div>
-      <input type="number" min="0" class="crew-input" data-key="${t.key}" value="${v}" placeholder="0">`;
-  });
-
-  panel.innerHTML=`
-    <span class="status-pill ${st.state}">${STATUS_LABEL[st.state]}</span>
-    <h2>${pin.label}</h2>
-    <div class="overall">${oStart} &rarr; ${oFin}${!acts.length?' &middot; no activities yet':''}</div>
-    ${(()=>{ const op=overallPct(pin); return op===null?'':`<div class="pct-overall"><div class="pct-head"><span>Overall progress</span><b>${op}%</b></div><div class="pbar"><span style="width:${op}%"></span></div></div>`; })()}
-
-    <div class="sec-title">Activities (editable) <span class="add-link" id="addActLink">+ add activity</span></div>
-    <table class="act-table">
-      <thead><tr><th>Activity</th><th>Start</th><th>Finish</th><th>State</th>${CAN_DELETE ? '<th></th>' : ''}</tr></thead>
-      <tbody>${rows||'<tr><td colspan="5" style="color:var(--muted);font-size:11.5px;padding:8px 3px;">No activities. Click "+ add activity" to build the sequence.</td></tr>'}</tbody>
-    </table>
-
-    <label>Status override</label>
-    <select id="statusSel">
-      <option value="auto">Auto (from schedule dates)</option>
-      <option value="live">Force LIVE</option>
-      <option value="hold">ON HOLD</option>
-      <option value="notlive">Force NOT live / finished</option>
-    </select>
-
-    <div class="sec-title">Crew on this front (by trade)</div>
-    <div class="crew-grid">${crewInputs}</div>
-    <div class="crew-total"><span>Total crew</span><b id="crewTotalDisp">0</b></div>
-
-    <label>Current task / progress notes</label>
-    <textarea id="notesTxt" placeholder="What they're doing, progress, blockers...">${log.notes||''}</textarea>
-    ${log.updatedAt?`<div class="updated-line">Last updated: ${fmtTs(log.updatedAt)}</div>`:''}
-
-    <div class="actions">
-      <button class="btn warn" id="clearBtn">Clear crew</button>
-      <button class="btn active" id="saveBtn">Save</button>
-    </div>
-  `;
-  panel.querySelector('#statusSel').value=override;
-
-  function recalcTotal(){
-    let t=0; panel.querySelectorAll('.crew-input').forEach(inp=>t+=Number(inp.value)||0);
-    panel.querySelector('#crewTotalDisp').textContent=t;
-  }
-  recalcTotal();
-  panel.querySelectorAll('.crew-input').forEach(inp=>inp.addEventListener('input',recalcTotal));
-
-  panel.querySelectorAll('.act-name').forEach(inp=>inp.addEventListener('change',(e)=>editActivity(pin,schedKey,+e.target.dataset.i,'a',e.target.value)));
-  panel.querySelectorAll('.act-date').forEach(inp=>inp.addEventListener('change',(e)=>editActivity(pin,schedKey,+e.target.dataset.i,e.target.dataset.f,e.target.value)));
-  panel.querySelectorAll('.row-del').forEach(btn=>btn.addEventListener('click',(e)=>deleteActivity(pin,schedKey,+e.target.dataset.i)));
-  panel.querySelector('#addActLink').onclick=()=>addActivity(pin,schedKey);
-
-  panel.querySelector('#saveBtn').onclick=async()=>{
-    const crew={};
-    panel.querySelectorAll('.crew-input').forEach(inp=>{ crew[inp.dataset.key]=inp.value; });
-    crewLog[pin.id]={crew, notes:panel.querySelector('#notesTxt').value, updatedAt:Date.now()};
-    statusOverrides[pin.id]=panel.querySelector('#statusSel').value;
-    await safeSet('crew-log-all',crewLog);
-    await safeSet('status-overrides-all',statusOverrides);
-    render(); showPanel(pin);
-  };
-  panel.querySelector('#clearBtn').onclick=async()=>{
-    delete crewLog[pin.id];
-    await safeSet('crew-log-all',crewLog);
-    render(); showPanel(pin);
-  };
-}
-
-function ensureEditable(schedKey){
-  if(!scheduleEdits[schedKey]){
-    const base = (schedKey in BASE_SCHEDULE) ? BASE_SCHEDULE[schedKey] : [];
-    scheduleEdits[schedKey] = base.map(a=>({a:a.a, s:a.s, f:a.f}));
-  }
-}
-async function editActivity(pin,schedKey,i,field,val){
-  ensureEditable(schedKey);
-  scheduleEdits[schedKey][i][field]=val;
-  await safeSet('schedule-edits',scheduleEdits);
-  render(); showPanel(pin);
-}
-async function deleteActivity(pin,schedKey,i){
-  ensureEditable(schedKey);
-  scheduleEdits[schedKey].splice(i,1);
-  await safeSet('schedule-edits',scheduleEdits);
-  render(); showPanel(pin);
-}
-async function addActivity(pin,schedKey){
-  ensureEditable(schedKey);
-  const list=scheduleEdits[schedKey];
-  const lastF = list.length?list[list.length-1].f:TODAY;
-  list.push({a:'New Activity', s:lastF||TODAY, f:lastF||TODAY});
-  await safeSet('schedule-edits',scheduleEdits);
-  render(); showPanel(pin);
-}
-
-function onPinDown(e,id){ if(!calibrating)return; e.preventDefault(); e.stopPropagation(); draggingId=id; const el=document.querySelector('.pin[data-id="'+id+'"]'); if(el)el.classList.add('dragging'); }
-function clientXY(e){ if(e.touches&&e.touches[0])return{x:e.touches[0].clientX,y:e.touches[0].clientY}; return{x:e.clientX,y:e.clientY}; }
-document.addEventListener('mousemove',onDragMove);
-document.addEventListener('touchmove',onDragMove,{passive:false});
-document.addEventListener('mouseup',onDragEnd);
-document.addEventListener('touchend',onDragEnd);
-function onDragMove(e){ if(!draggingId)return; e.preventDefault();
-  const rect=document.getElementById('viewport').getBoundingClientRect(); const {x,y}=clientXY(e);
-  let px=((x-rect.left)/rect.width)*100, py=((y-rect.top)/rect.height)*100;
-  px=Math.max(0,Math.min(100,px)); py=Math.max(0,Math.min(100,py));
-  positions[draggingId]={x:Math.round(px*100)/100,y:Math.round(py*100)/100}; render(); }
-async function onDragEnd(){ if(!draggingId)return; draggingId=null; await safeSet('pin-positions-all',positions); }
-
-document.getElementById('stage').addEventListener('click',(e)=>{
-  if(!addMode)return;
-  if(panMoved)return; 
-  if(e.target.closest('.pin')||e.target.closest('.bubble'))return;
-  const rect=document.getElementById('viewport').getBoundingClientRect();
-  const px=((e.clientX-rect.left)/rect.width)*100, py=((e.clientY-rect.top)/rect.height)*100;
-  const name=prompt('Name this work front (e.g. structure tag or area):');
-  if(!name)return;
-  const id='wf_'+Date.now();
-  customPins.push({id,label:name,x:Math.round(px*100)/100,y:Math.round(py*100)/100,sched:null});
-  safeSet('custom-pins',customPins);
-  statusOverrides[id]='hold'; safeSet('status-overrides-all',statusOverrides);
-  addMode=false; document.getElementById('addPinBtn').classList.remove('active'); document.getElementById('modeBanner').textContent='';
-  selectedId=id; render(); const p=findPin(id); if(p){ showBubble(p,getPos(p)); showPanel(p); }
-});
-
-document.getElementById('calibrateBtn').addEventListener('click',()=>{
-  calibrating=!calibrating; document.getElementById('calibrateBtn').classList.toggle('active',calibrating);
-  document.getElementById('modeBanner').textContent=calibrating?'Drag pins to correct position — saves automatically.':'';
-  if(calibrating){ addMode=false; document.getElementById('addPinBtn').classList.remove('active'); }
-  render();
-});
-document.getElementById('addPinBtn').addEventListener('click',()=>{
-  addMode=!addMode; document.getElementById('addPinBtn').classList.toggle('active',addMode);
-  document.getElementById('modeBanner').textContent=addMode?'Click anywhere on the image to drop a new work front.':'';
-  if(addMode){ calibrating=false; document.getElementById('calibrateBtn').classList.remove('active'); }
-});
-document.getElementById('resetPositionsBtn').addEventListener('click',async()=>{
-  if(!confirm('Reset all default pins to their original positions? Custom work fronts you added stay put.'))return;
-  positions={}; await safeSet('pin-positions-all',positions); render();
-});
-
-document.getElementById('lockBtn').addEventListener('click', lockTodayReport);
-document.getElementById('logoutBtn').addEventListener('click', doLogout);
-
-// ---------- PANEL RESIZE (drag to widen so activity names are readable) ----------
-(function(){
-  const handle=document.getElementById('panelResize');
-  const panel=document.getElementById('detailPanel');
-  if(!handle||!panel) return;
-  const saved=localStorage.getItem('ard-panel-w');
-  if(saved) document.documentElement.style.setProperty('--panel-w', saved+'px');
-  let dragging=false, startX=0, startW=0;
-  handle.addEventListener('mousedown',(e)=>{
-    dragging=true; startX=e.clientX;
-    startW=panel.getBoundingClientRect().width;
-    handle.classList.add('dragging'); document.body.style.userSelect='none'; e.preventDefault();
-  });
-  document.addEventListener('mousemove',(e)=>{
-    if(!dragging)return;
-    // dragging the handle left (negative dx) should WIDEN the panel (panel is on the right)
-    let w=startW-(e.clientX-startX);
-    w=Math.max(300, Math.min(760, w));
-    document.documentElement.style.setProperty('--panel-w', w+'px');
-  });
-  document.addEventListener('mouseup',()=>{
-    if(!dragging)return;
-    dragging=false; handle.classList.remove('dragging'); document.body.style.userSelect='';
-    const w=panel.getBoundingClientRect().width;
-    localStorage.setItem('ard-panel-w', Math.round(w));
-  });
-})();
-
-// ---------- SEARCH + FILTERS ----------
-function flyToPin(pin){
-  // center the viewport on the pin at a comfortable zoom
-  const stage=document.getElementById('stage');
-  const sw=stage.clientWidth, sh=stage.clientHeight;
-  const pos=getPos(pin);
-  const targetScale=2.4;
-  zoomState.scale=targetScale;
-  // pin position in unscaled content px = (pos% /100) * baseWidth; baseWidth = sw (image is width:100%)
-  const vpH=document.getElementById('viewport').offsetHeight;
-  const px=(pos.x/100)*sw, py=(pos.y/100)*vpH;
-  zoomState.x = sw/2 - px*targetScale;
-  zoomState.y = sh/2 - py*targetScale;
-  clampPan(); applyTransform();
-}
-function runSearch(term){
-  searchTerm=term.trim().toLowerCase();
-  document.getElementById('searchClear').style.display = searchTerm?'block':'none';
-  document.querySelectorAll('.pin').forEach(el=>el.classList.remove('search-hit'));
-  if(!searchTerm) return;
-  const match=allPins().find(p=> p.label.toLowerCase().includes(searchTerm) || p.id.toLowerCase().includes(searchTerm));
-  if(match){
-    selectedId=match.id;
-    render();
-    flyToPin(match);
-    setTimeout(()=>{ const el=document.querySelector('.pin[data-id="'+match.id+'"]'); if(el) el.classList.add('search-hit'); showBubble(match,getPos(match)); showPanel(match); },100);
-  }
-}
-const searchInput=document.getElementById('searchInput');
-searchInput.addEventListener('input',(e)=>runSearch(e.target.value));
-searchInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter') runSearch(e.target.value); });
-document.getElementById('searchClear').addEventListener('click',()=>{ searchInput.value=''; runSearch(''); });
-
-function updateFilterUI(){
-  const active=anyFilterActive();
-  document.getElementById('clearFilters').style.display=active?'inline-block':'none';
-  const fc=document.getElementById('filterCount');
-  if(active){
-    const shown=allPins().filter(pinMatchesFilter).length;
-    fc.textContent=shown+' of '+allPins().length+' fronts';
-  }else fc.textContent='';
-}
-document.querySelectorAll('#statusChips .fchip').forEach(chip=>{
-  chip.addEventListener('click',()=>{
-    const s=chip.dataset.status;
-    if(activeStatusFilters.has(s)){ activeStatusFilters.delete(s); chip.classList.remove('on'); }
-    else{ activeStatusFilters.add(s); chip.classList.add('on'); }
-    render(); updateFilterUI();
-  });
-});
-document.querySelectorAll('#tradeChips .fchip').forEach(chip=>{
-  chip.addEventListener('click',()=>{
-    const t=chip.dataset.trade;
-    if(activeTradeFilters.has(t)){ activeTradeFilters.delete(t); chip.classList.remove('on'); }
-    else{ activeTradeFilters.add(t); chip.classList.add('on'); }
-    render(); updateFilterUI();
-  });
-});
-document.getElementById('clearFilters').addEventListener('click',()=>{
-  activeStatusFilters.clear(); activeTradeFilters.clear();
-  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('on'));
-  render(); updateFilterUI();
-});
-
-
-// ---------- DAILY SUMMARY (printable) ----------
-document.getElementById('summaryBtn').addEventListener('click',async ()=>{
-  const dateNice = new Date().toLocaleDateString('en-AU',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-  // load today's daily activities (general resources not tied to a structure)
-  let daily={entries:[]};
-  try{ daily = await loadDaily(TODAY); }catch(e){ console.error('daily load for summary failed',e); }
-  const dailyEntries = (daily && daily.entries) ? daily.entries : [];
-  const dailyPeople = dailyEntries.reduce((s,e)=>s+(Number(e.count)||0),0);
-  // gather
-  let live=0,hold=0; const tot={demolition:0,asbestos:0,scaffolding:0,subcontractor:0,total:0};
-  const rows=[];
-  allPins().forEach(pin=>{
-    const st=effectiveStatus(pin); const log=crewLog[pin.id]||{crew:{}}; const crew=log.crew||{};
-    const total=crewTotal(pin.id);
-    const hasData=(st.state==='live'||st.state==='hold')||total>0||(log.notes&&log.notes.trim());
-    if(!hasData) return;
-    if(st.state==='live')live++; if(st.state==='hold')hold++;
-    tot.demolition+=Number(crew.demolition)||0; tot.asbestos+=Number(crew.asbestos)||0;
-    tot.scaffolding+=Number(crew.scaffolding)||0; tot.subcontractor+=Number(crew.subcontractor)||0; tot.total+=total;
-    const op=overallPct(pin);
-    rows.push({label:pin.label, status:STATUS_LABEL[st.state], activity:st.activity?st.activity.a:'—',
-      crew, total, notes:log.notes||'', pct:op});
-  });
-  rows.sort((a,b)=> (a.status==='ON HOLD'?1:0)-(b.status==='ON HOLD'?1:0));
-
-  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const crewCell=(c)=>{
-    const parts=[];
-    if(c.demolition)parts.push('<span class="ct demo">'+c.demolition+' Demo</span>');
-    if(c.asbestos)parts.push('<span class="ct asb">'+c.asbestos+' Asb</span>');
-    if(c.scaffolding)parts.push('<span class="ct scaff">'+c.scaffolding+' Scaff</span>');
-    if(c.subcontractor)parts.push('<span class="ct sub">'+c.subcontractor+' Sub</span>');
-    return parts.join(' ')||'<span style="color:#999">—</span>';
-  };
-  let tbody='';
-  rows.forEach(r=>{
-    tbody+='<tr>'+
-      '<td><b>'+esc(r.label)+'</b></td>'+
-      '<td><span class="pill '+(r.status==='ON HOLD'?'hold':'live')+'">'+r.status+'</span></td>'+
-      '<td>'+esc(r.activity)+(r.pct!=null?' <span class="pc">('+r.pct+'%)</span>':'')+'</td>'+
-      '<td>'+crewCell(r.crew)+' <b>= '+r.total+'</b></td>'+
-      '<td>'+esc(r.notes)+'</td>'+
-    '</tr>';
-  });
-  if(rows.length===0 && dailyEntries.length===0){ alert('No live fronts, crew, or daily activities logged yet — nothing to summarise.'); return; }
-
-  const html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>269-ARD Daily Summary '+TODAY+'</title>'+
-  '<style>'+
-  '*{box-sizing:border-box;margin:0;padding:0;}'+
-  'body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111;padding:28px 34px;background:#fff;}'+
-  '.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #1F4E78;padding-bottom:12px;margin-bottom:6px;}'+
-  '.hd h1{font-size:20px;color:#1F4E78;}'+
-  '.hd .sub{color:#666;font-size:12px;margin-top:2px;}'+
-  '.hd .date{text-align:right;font-size:13px;color:#333;font-weight:600;}'+
-  '.kpis{display:flex;gap:10px;margin:16px 0;}'+
-  '.kpi{flex:1;border:1px solid #ddd;border-radius:8px;padding:10px 14px;text-align:center;}'+
-  '.kpi .v{font-size:22px;font-weight:700;}'+
-  '.kpi .l{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#777;margin-top:2px;}'+
-  '.kpi.live .v{color:#1F9D55;}.kpi.hold .v{color:#D97706;}.kpi.crew .v{color:#2563EB;}'+
-  'table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12.5px;}'+
-  'th{background:#1F4E78;color:#fff;text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;}'+
-  'td{padding:8px 10px;border-bottom:1px solid #e5e5e5;vertical-align:top;}'+
-  'tr:nth-child(even) td{background:#f7f9fc;}'+
-  '.pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;}'+
-  '.pill.live{background:#d9f5e5;color:#1F7A3D;}.pill.hold{background:#fff2cc;color:#9C6500;}'+
-  '.ct{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-right:2px;}'+
-  '.ct.demo{background:#fde2e2;color:#c0392b;}.ct.asb{background:#f0e2fd;color:#8e44ad;}.ct.scaff{background:#e0f0fd;color:#2471a3;}.ct.sub{background:#fdf0d5;color:#b9770e;}'+
-  '.pc{color:#888;font-size:11px;}'+
-  '.foot{margin-top:20px;font-size:10.5px;color:#999;border-top:1px solid #eee;padding-top:10px;}'+
-  '@media print{body{padding:0;}.noprint{display:none;}}'+
-  '.noprint{margin:18px 0;text-align:center;}'+
-  '.noprint button{font-size:14px;padding:9px 22px;border-radius:8px;border:none;background:#1F4E78;color:#fff;cursor:pointer;}'+
-  '</style></head><body>'+
-  '<div class="hd"><div><h1>269-ARD Daily Crew Summary</h1><div class="sub">Altona Refinery Demolition — End-of-Shift Report</div></div>'+
-  '<div class="date">'+dateNice+'<br><span style="font-weight:400;color:#888">Generated '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})+'</span></div></div>'+
-  '<div class="kpis">'+
-    '<div class="kpi live"><div class="v">'+live+'</div><div class="l">Live fronts</div></div>'+
-    '<div class="kpi hold"><div class="v">'+hold+'</div><div class="l">On hold</div></div>'+
-    '<div class="kpi crew"><div class="v">'+(tot.total+dailyPeople)+'</div><div class="l">Total crew</div></div>'+
-    '<div class="kpi"><div class="v" style="color:#c0392b">'+tot.demolition+'</div><div class="l">Demolition</div></div>'+
-    '<div class="kpi"><div class="v" style="color:#8e44ad">'+tot.asbestos+'</div><div class="l">Asbestos</div></div>'+
-    '<div class="kpi"><div class="v" style="color:#2471a3">'+tot.scaffolding+'</div><div class="l">Scaffolding</div></div>'+
-    '<div class="kpi"><div class="v" style="color:#0d9488">'+dailyPeople+'</div><div class="l">Daily / plant</div></div>'+
-  '</div>'+
-  '<table><thead><tr><th>Work Front</th><th>Status</th><th>Activity</th><th>Crew</th><th>Remarks &amp; Difficulties</th></tr></thead><tbody>'+tbody+'</tbody></table>'+
-  (dailyEntries.length? '<h2 style="font-size:15px;color:#1F4E78;margin:20px 0 8px;">Daily Activities &amp; General Resources</h2>'+
-    '<table><thead><tr><th>Category</th><th>Activity / Resource</th><th>People</th><th>Hours</th><th>Note / Area</th></tr></thead><tbody>'+
-    dailyEntries.map(e=>'<tr><td><b>'+esc((e.cat||'').charAt(0).toUpperCase()+(e.cat||'').slice(1))+'</b></td><td>'+esc(e.name)+'</td><td style="text-align:center">'+esc(e.count||0)+'</td><td style="text-align:center">'+(e.hours?esc(e.hours)+'h':'—')+'</td><td>'+esc(e.note||'')+'</td></tr>').join('')+
-    '</tbody></table>' : '')+
-  '<div class="foot">269-ARD Live Crew Position System · '+(CURRENT_USER?esc(CURRENT_USER.email):'')+' · This is a point-in-time snapshot generated from the live board.</div>'+
-  '<div class="noprint"><button onclick="window.print()">🖨 Print / Save as PDF</button></div>'+
-  '</body></html>';
-
-  const w=window.open('','_blank');
-  if(!w){ alert('Please allow pop-ups to view the summary.'); return; }
-  w.document.write(html); w.document.close();
-});
-
-function csvEsc(v){ v=(v==null?'':String(v)); return '"'+v.replace(/"/g,'""')+'"'; }
-document.getElementById('exportBtn').addEventListener('click',()=>{
-  const rows=[];
-  rows.push(['Date','Work Front','Activity','Crew Summary','Remarks & Difficulties']);
-  allPins().forEach(pin=>{
-    const st=effectiveStatus(pin); const log=crewLog[pin.id]||{crew:{}};
-    const crew=log.crew||{};
-    const total=crewTotal(pin.id);
-    const hasData = (st.state==='live'||st.state==='hold') || total>0 || (log.notes&&log.notes.trim());
-    if(!hasData) return;
-
-    let crewArr = [];
-    if(crew.demolition) crewArr.push(`${crew.demolition} Demolition`);
-    if(crew.asbestos) crewArr.push(`${crew.asbestos} Asbestos`);
-    if(crew.scaffolding) crewArr.push(`${crew.scaffolding} Scaffolding`);
-    if(crew.subcontractor) crewArr.push(`${crew.subcontractor} Subcontractor`);
-    let crewStr = crewArr.length > 0 ? `Total: ${total} (${crewArr.join(', ')})` : 'No crew logged';
-
-    rows.push([
-      TODAY, 
-      pin.label, 
-      st.activity ? st.activity.a : 'No activity',
-      crewStr,
-      log.notes || ''
-    ]);
-  });
-  if(rows.length===1){ alert('No live fronts or crew logged yet — nothing to export.\nLog some crew first, then export.'); return; }
-  const csv=rows.map(r=>r.map(csvEsc).join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download='269-ARD_crew_report_'+TODAY+'.csv';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-});
-
-// ================= ZOOM / PAN ENGINE =================
-const zoomState = { scale:1, x:0, y:0 };
-const ZOOM_MIN=1, ZOOM_MAX=6;
-let panMoved=false;
-
-function applyTransform(){
-  const vp=document.getElementById('viewport');
-  vp.style.transform='translate('+zoomState.x+'px,'+zoomState.y+'px) scale('+zoomState.scale+')';
-  const zl=document.getElementById('zoomLevel');
-  if(zl) zl.textContent=Math.round(zoomState.scale*100)+'%';
-  const b=document.querySelector('#viewport .bubble');
-  if(b) b.style.transform='scale('+(1/zoomState.scale)+')';
-}
-function clampPan(){
-  const stage=document.getElementById('stage');
-  const sw=stage.clientWidth, sh=stage.clientHeight;
-  const contentW=sw*zoomState.scale, contentH=(document.getElementById('viewport').offsetHeight)*zoomState.scale;
-  const minX=Math.min(0, sw-contentW), minY=Math.min(0, sh-contentH);
-  zoomState.x=Math.max(minX, Math.min(0, zoomState.x));
-  zoomState.y=Math.max(minY, Math.min(0, zoomState.y));
-}
-function zoomAt(clientX, clientY, factor){
-  const stage=document.getElementById('stage');
-  const rect=stage.getBoundingClientRect();
-  const ox=clientX-rect.left, oy=clientY-rect.top;
-  const newScale=Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomState.scale*factor));
-  const ratio=newScale/zoomState.scale;
-  zoomState.x = ox - (ox - zoomState.x)*ratio;
-  zoomState.y = oy - (oy - zoomState.y)*ratio;
-  zoomState.scale=newScale;
-  clampPan(); applyTransform();
-}
-function setupZoomPan(){
-  const stage=document.getElementById('stage');
-  stage.addEventListener('wheel',(e)=>{
+  const errEl=document.getElementById('error-msg');
+  document.getElementById('login-form').addEventListener('submit', async (e)=>{
     e.preventDefault();
-    const factor = e.deltaY<0 ? 1.15 : 1/1.15;
-    zoomAt(e.clientX, e.clientY, factor);
-  }, {passive:false});
-
-  document.getElementById('zoomInBtn').onclick=()=>{ const r=stage.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1.3); };
-  document.getElementById('zoomOutBtn').onclick=()=>{ const r=stage.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1/1.3); };
-  document.getElementById('zoomResetBtn').onclick=()=>{ zoomState.scale=1; zoomState.x=0; zoomState.y=0; applyTransform(); };
-
-  let panning=false, startX=0, startY=0, startPanX=0, startPanY=0;
-  function panStart(e){
-    if(calibrating||addMode) return;
-    if(e.target.closest('.pin')||e.target.closest('.bubble')||e.target.closest('.zoom-controls')) return;
-    panning=true; panMoved=false;
-    const p=clientXY(e); startX=p.x; startY=p.y; startPanX=zoomState.x; startPanY=zoomState.y;
-    stage.classList.add('panning');
-  }
-  function panMove(e){
-    if(!panning) return;
-    const p=clientXY(e);
-    const dx=p.x-startX, dy=p.y-startY;
-    if(Math.abs(dx)>3||Math.abs(dy)>3) panMoved=true;
-    zoomState.x=startPanX+dx; zoomState.y=startPanY+dy;
-    clampPan(); applyTransform();
-  }
-  function panEnd(){ panning=false; stage.classList.remove('panning'); setTimeout(()=>{panMoved=false;},50); }
-
-  stage.addEventListener('mousedown',panStart);
-  document.addEventListener('mousemove',panMove);
-  document.addEventListener('mouseup',panEnd);
-  stage.addEventListener('touchstart',(e)=>{ if(e.touches.length===1) panStart(e); },{passive:true});
-  document.addEventListener('touchmove',(e)=>{ if(e.touches.length===1) panMove(e); },{passive:true});
-  document.addEventListener('touchend',panEnd);
-}
-
-function applyLive(data){
-  positions = data.positions || {};
-  crewLog = data.crewLog || {};
-  statusOverrides = data.statusOverrides || {};
-  customPins = data.customPins || [];
-  scheduleEdits = data.scheduleEdits || {};
-}
-
-async function loadAssets(){
-  // Load pins and schedule independently so one failing doesn't wipe the board.
-  try{
-    const pinsRes = await fetch('assets/pins.json',{cache:'no-cache'});
-    if(!pinsRes.ok) throw new Error('pins.json HTTP '+pinsRes.status);
-    DEFAULT_PINS = await pinsRes.json();
-  }catch(e){
-    console.error('Failed to load pins.json:', e);
-    showLoadError('Could not load pin data (assets/pins.json). Check the file is uploaded to GitHub in the assets folder.');
-    DEFAULT_PINS = [];
-  }
-  try{
-    const schedRes = await fetch('assets/schedule.json',{cache:'no-cache'});
-    if(!schedRes.ok) throw new Error('schedule.json HTTP '+schedRes.status);
-    BASE_SCHEDULE = await schedRes.json();
-  }catch(e){
-    console.error('Failed to load schedule.json:', e);
-    BASE_SCHEDULE = {}; // pins still show; they'll just read as "no schedule"
-  }
-}
-
-function showLoadError(msg){
-  let bar = document.getElementById('loadErrBar');
-  if(!bar){
-    bar = document.createElement('div');
-    bar.id = 'loadErrBar';
-    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:#7f1d1d;color:#fff;padding:10px 16px;font-size:13px;font-family:Inter,sans-serif;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.4);';
-    document.body.appendChild(bar);
-  }
-  bar.textContent = '⚠ ' + msg;
-}
-
-async function lockTodayReport(){
-  if(!CAN_EDIT){ alert('You have view-only access. Ask an editor to lock the report.'); return; }
-  const rows=[];
-  allPins().forEach(pin=>{
-    const st=effectiveStatus(pin); const log=crewLog[pin.id]||{crew:{}}; const crew=log.crew||{};
-    const total=crewTotal(pin.id);
-    const hasData=(st.state==='live'||st.state==='hold')||total>0||(log.notes&&log.notes.trim());
-    if(!hasData) return;
-    rows.push({
-      label:pin.label, status:STATUS_LABEL[st.state],
-      activity:st.activity?st.activity.a:'', actStart:st.activity?st.activity.s:'', actFinish:st.activity?st.activity.f:'',
-      demolition:Number(crew.demolition)||0, asbestos:Number(crew.asbestos)||0,
-      scaffolding:Number(crew.scaffolding)||0, subcontractor:Number(crew.subcontractor)||0,
-      total, notes:log.notes||'', updatedAt:log.updatedAt||null
-    });
-  });
-  const payload={ date:TODAY, locked:true, rows, savedAt:Date.now(), savedBy:CURRENT_USER?CURRENT_USER.email:'' };
-  await saveSnapshot(TODAY, payload);
-  alert('End-of-day report locked for '+TODAY+' ('+rows.length+' active fronts).\nView it any time on the Reports page.');
-}
-
-function wireEditingForRole(){
-  if(!CAN_EDIT){
-    ['calibrateBtn','addPinBtn','resetPositionsBtn','lockBtn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
-  } else if (!CAN_DELETE) {
-    ['calibrateBtn','resetPositionsBtn','lockBtn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
-  }
-  // Guests: no Reports access, no CSV export.
-  if(USER_ROLE === 'guest'){
-    const rl=document.getElementById('reportsLink'); if(rl) rl.style.display='none';
-    const ex=document.getElementById('exportBtn'); if(ex) ex.style.display='none';
-  }
-}
-
-async function init(){
-  updateClock();
-  updateThemeBtn();
-  const tb=document.getElementById('themeBtn'); if(tb) tb.onclick=toggleTheme;
-  setupZoomPan();
-  await loadAssets();
-  requireAuth(async (user, role)=>{
-    CURRENT_USER = user;
-    USER_ROLE = role;
-    CAN_EDIT = (role === 'editor' || role === 'engineer');
-    CAN_DELETE = (role === 'editor');
-    document.getElementById('userChip').textContent = (user.isAnonymous ? 'Guest' : user.email) + ' · ' + role;
-    (function(){var sl=document.getElementById('scribbleLink'); if(sl && !(role==='supervisor'||role==='editor'||role==='engineer')) sl.style.display='none';})();
-    wireEditingForRole();
-    // Draw pins immediately from local assets so the board is never empty,
-    // even if the Firebase live-data read fails or is slow.
-    render();
+    errEl.style.display='none';
+    const email=document.getElementById('email').value.trim();
+    const password=document.getElementById('password').value;
     try{
-      const first = await loadLive();
-      applyLive(first);
-      render();
-    }catch(e){
-      console.error('loadLive failed (board still shows default pins):', e);
-    }
-    try{
-      watchLive((data)=>{ applyLive(data); render(); if(selectedId){ const p=findPin(selectedId); if(p) showPanel(p); } });
-    }catch(e){
-      console.error('watchLive failed:', e);
+      await signInWithEmailAndPassword(auth,email,password);
+      window.location.href='index.html';
+    }catch(err){
+      errEl.textContent='Sign-in failed — check your email and password.';
+      errEl.style.display='block';
     }
   });
-}
-init();
+
+  document.getElementById('guest-btn').addEventListener('click', async ()=>{
+    errEl.style.display='none';
+    try{
+      await signInAnonymously(auth);
+      localStorage.setItem('ard-guest','true');
+      window.location.href='index.html';
+    }catch(err){
+      errEl.textContent="Guest access isn't enabled yet. Ask the administrator to turn on Anonymous sign-in.";
+      errEl.style.display='block';
+    }
+  });
 </script>
 </body>
 </html>
