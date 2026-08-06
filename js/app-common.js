@@ -131,6 +131,22 @@ export async function saveDictionary(dict){
   await setDoc(DICT_REF(), { ...dict, updatedAt:Date.now() });
 }
 
+// ---- ARDY LEARNING PROFILE (private per user, background) ----
+// /chatHistory/{uid} = { mem:{name, asks:{}}, updatedAt }
+const CHAT_REF = (uid)=> doc(db,"chatHistory",uid);
+export async function loadBotProfile(uid){
+  if(!uid) return { mem:{} };
+  try{
+    const snap = await getDoc(CHAT_REF(uid));
+    return snap.exists() ? snap.data() : { mem:{} };
+  }catch(e){ console.error('loadBotProfile', e); return { mem:{} }; }
+}
+export async function saveBotProfile(uid, mem){
+  if(!uid) return;
+  try{ await setDoc(CHAT_REF(uid), { mem:mem||{}, updatedAt:Date.now() }); }
+  catch(e){ console.error('saveBotProfile', e); }
+}
+
 // ---- DAILY SNAPSHOTS (history for the calendar) ----
 // /reports/{YYYY-MM-DD} = { date, locked, rows:[...], savedAt, savedBy }
 export async function saveSnapshot(dateStr, payload){
