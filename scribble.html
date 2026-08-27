@@ -39,6 +39,8 @@
   .parsed-row input,.parsed-row select{background:var(--glass);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:6px 8px;font-size:12px;width:100%;}
   .parsed-row .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;}
   .parsed-row .del:hover{color:var(--red);}
+  .parsed-row.ro{grid-template-columns:1fr 1fr 70px 56px;}
+  .rocell{font-size:12px;color:var(--text);padding:6px 8px;background:var(--glass-2);border:1px solid var(--line);border-radius:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .plabel{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700;margin:10px 0 5px;}
   .unmatched{border-color:var(--hold) !important;box-shadow:0 0 0 1px var(--hold);}
   .reviewactions{display:flex;gap:8px;margin-top:12px;}
@@ -98,7 +100,7 @@ import { requireAuth, doLogout, canEdit, isSupervisor, canSeeScribbles,
 import { initTheme, toggleTheme, startClock, todayISO, addDaysISO, fmtDMY, fmtDayDMY } from "./js/ui-common.js";
 import { parseScribble, learnCorrection } from "./js/parser.js";
 
-let ROLE='viewer', USER=null, CAN_EDIT=false, SUP=false;
+let ROLE='viewer', USER=null, CAN_EDIT=false, CAN_APPROVE=false, SUP=false;
 let curDate=todayISO();
 let DICT={people:{},plant:{},structures:{},aliases:{}};
 let STRUCT_KEYS=[];
@@ -135,9 +137,9 @@ let draftEdits={};  // scribbleId -> {crew:[...], daily:[...]}
 function renderReview(){
   const col=document.getElementById('reviewCol');
   if(!CAN_EDIT){ col.style.display='none'; document.getElementById('wrap').classList.add('solo'); return; }
-  let html='<div class="card pad review"><h2>📋 Review &amp; approve — '+fmtDMY(curDate)+'</h2>';
+  let html='<div class="card pad review"><h2>📋 '+(CAN_APPROVE?'Review &amp; approve':'Field notes (view only)')+' — '+fmtDMY(curDate)+'</h2>';
   if(dayScribbles.length===0){
-    html+='<div class="empty-review">No field notes submitted for this day yet.<br>When a supervisor writes and submits, their notes and a parsed draft appear here for you to check and approve.</div></div>';
+    html+='<div class="empty-review">No field notes submitted for this day yet.<br>'+(CAN_APPROVE?'When a supervisor writes and submits, their notes and a parsed draft appear here for you to check and approve.':'When a supervisor submits notes, they\'ll appear here for you to see.')+'</div></div>';
     col.innerHTML=html; return;
   }
   dayScribbles.forEach(sc=>{
@@ -151,36 +153,57 @@ function renderReview(){
     if(parsed.crew.length){
       html+='<div class="plabel">Crew → structures</div>';
       parsed.crew.forEach((c,i)=>{
-        html+='<div class="parsed-row">'+
-          '<input class="'+(c.matched?'':'unmatched')+'" data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'" data-f="structure" value="'+esc(c.structure||c.rawToken)+'" placeholder="structure">'+
-          '<select data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'" data-f="trade">'+tradeOpts(c.trade)+'</select>'+
-          '<input data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'" data-f="count" type="number" min="0" value="'+esc(c.count)+'" title="people">'+
-          '<input data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'" data-f="hours" type="number" min="0" step="0.5" value="'+esc(c.hours)+'" title="hours">'+
-          '<button class="del" data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'">&times;</button>'+
-        '</div>';
+        if(CAN_APPROVE){
+          html+='<div class="parsed-row">'+
+            '<input class="'+(c.matched?'':'unmatched')+'" data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'" data-f="structure" value="'+esc(c.structure||c.rawToken)+'" placeholder="structure">'+
+            '<select data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'" data-f="trade">'+tradeOpts(c.trade)+'</select>'+
+            '<input data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'" data-f="count" type="number" min="0" value="'+esc(c.count)+'" title="people">'+
+            '<input data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'" data-f="hours" type="number" min="0" step="0.5" value="'+esc(c.hours)+'" title="hours">'+
+            '<button class="del" data-sc="'+sc.id+'" data-t="crew" data-i="'+i+'">&times;</button>'+
+          '</div>';
+        } else {
+          html+='<div class="parsed-row ro">'+
+            '<span class="rocell">'+esc(c.structure||c.rawToken||'—')+'</span>'+
+            '<span class="rocell">'+esc(c.trade||'—')+'</span>'+
+            '<span class="rocell">'+esc(c.count||0)+' ppl</span>'+
+            '<span class="rocell">'+(c.hours?esc(c.hours)+'h':'—')+'</span>'+
+          '</div>';
+        }
       });
     }
     // daily rows
     if(parsed.daily.length){
       html+='<div class="plabel">Daily / plant / site-wide</div>';
       parsed.daily.forEach((d,i)=>{
-        html+='<div class="parsed-row">'+
-          '<input data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'" data-f="name" value="'+esc(d.name)+'" placeholder="name">'+
-          '<select data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'" data-f="cat">'+catOpts(d.cat)+'</select>'+
-          '<input data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'" data-f="count" type="number" min="0" value="'+esc(d.count)+'" title="people">'+
-          '<input data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'" data-f="hours" type="number" min="0" step="0.5" value="'+esc(d.hours)+'" title="hours">'+
-          '<button class="del" data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'">&times;</button>'+
-        '</div>';
+        if(CAN_APPROVE){
+          html+='<div class="parsed-row">'+
+            '<input data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'" data-f="name" value="'+esc(d.name)+'" placeholder="name">'+
+            '<select data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'" data-f="cat">'+catOpts(d.cat)+'</select>'+
+            '<input data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'" data-f="count" type="number" min="0" value="'+esc(d.count)+'" title="people">'+
+            '<input data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'" data-f="hours" type="number" min="0" step="0.5" value="'+esc(d.hours)+'" title="hours">'+
+            '<button class="del" data-sc="'+sc.id+'" data-t="daily" data-i="'+i+'">&times;</button>'+
+          '</div>';
+        } else {
+          html+='<div class="parsed-row ro">'+
+            '<span class="rocell">'+esc(d.name||'—')+'</span>'+
+            '<span class="rocell">'+esc(d.cat||'—')+'</span>'+
+            '<span class="rocell">'+esc(d.count||0)+' ppl</span>'+
+            '<span class="rocell">'+(d.hours?esc(d.hours)+'h':'—')+'</span>'+
+          '</div>';
+        }
       });
     }
     if(!parsed.crew.length && !parsed.daily.length){
-      html+='<div class="empty-review" style="padding:16px">Nothing auto-detected — add manually or check the note.</div>';
+      html+='<div class="empty-review" style="padding:16px">Nothing auto-detected — check the note.</div>';
     }
-    html+='<div class="reviewactions">'+
-      '<button class="btn reparse" data-reparse="'+sc.id+'">↻ Re-parse</button>'+
-      '<button class="btn approve" data-approve="'+sc.id+'">✓ Approve &amp; add to day</button>'+
-      '</div>';
+    if(CAN_APPROVE){
+      html+='<div class="reviewactions">'+
+        '<button class="btn reparse" data-reparse="'+sc.id+'">↻ Re-parse</button>'+
+        '<button class="btn approve" data-approve="'+sc.id+'">✓ Approve &amp; add to day</button>'+
+        '</div>';
+    }
     if(sc.status==='approved') html+='<div class="learnote">✓ Approved and added to the daily record.</div>';
+    else if(!CAN_APPROVE) html+='<div class="learnote" style="color:var(--muted)">👁 View only — an editor approves these.</div>';
     html+='</div>';
   });
   html+='</div>';
@@ -212,6 +235,7 @@ function wireReview(){
 }
 
 async function approve(scId){
+  if(!CAN_APPROVE) return; // safety: only editors can approve
   const sc=dayScribbles.find(s=>s.id===scId);
   const draft=draftEdits[scId];
   if(!draft) return;
@@ -288,7 +312,7 @@ function resubscribe(){
 
 async function init(){
   requireAuth(async (user, role)=>{
-    USER=user; ROLE=role; CAN_EDIT=canEdit(role); SUP=isSupervisor(role);
+    USER=user; ROLE=role; CAN_EDIT=canSeeScribbles(role) && !isSupervisor(role); CAN_APPROVE=(role==='editor'); SUP=isSupervisor(role);
     document.getElementById('userChip').textContent=(user.isAnonymous?'Guest':user.email)+' · '+role;
     // access control: only supervisor + editors can see this page at all
     if(!canSeeScribbles(role)){
@@ -307,6 +331,12 @@ async function init(){
       STRUCT_KEYS=[...Object.keys(s), ...Object.keys(d)];
     }catch(e){ console.error('keys load',e); }
     if(!CAN_EDIT){ document.getElementById('reviewCol').style.display='none'; document.getElementById('wrap').classList.add('solo'); }
+    // Engineers (can see review but not approve, not supervisor) get a clean view-only review — hide the writing pad.
+    if(CAN_EDIT && !CAN_APPROVE){
+      const padCol=document.querySelector('.col'); // first .col is the pad
+      if(padCol) padCol.style.display='none';
+      document.getElementById('wrap').classList.add('solo');
+    }
     resubscribe();
   });
 }
