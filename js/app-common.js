@@ -37,8 +37,8 @@ export function doGuestLogin(){ return signInAnonymously(auth); }
 export function doLogout(){ return signOut(auth).then(()=> window.location.href="login.html"); }
 
 // Roles allowed to edit / delete (single source of truth).
-// Roles: editor (full) | engineer (edit not delete) | supervisor (scribble only) | viewer (read-only) | guest (anon read-only)
-export function canEdit(role){ return role === "editor" || role === "engineer"; }
+// Roles: editor (full) | engineer (edit not delete, view-only field notes) | supervisor (edit boards + write scribbles, no delete) | viewer (read-only) | guest (anon read-only)
+export function canEdit(role){ return role === "editor" || role === "engineer" || role === "supervisor"; }
 export function canDelete(role){ return role === "editor"; }
 export function isReadOnly(role){ return role === "guest" || role === "viewer"; }
 export function isSupervisor(role){ return role === "supervisor"; }
