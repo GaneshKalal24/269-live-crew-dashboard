@@ -368,16 +368,28 @@ body::after{width:460px;height:460px;background:var(--aurora-2);bottom:-170px;ri
 <script type="module">
 import { requireAuth, doLogout, loadLive, watchLive, saveLive, saveSnapshot, loadDaily } from "./js/app-common.js";
 import { mountChatbot } from "./js/chatbot.js";
+import { loadBotProfile, saveBotProfile } from "./js/app-common.js";
 
-// Mount the assistant — getData() runs fresh each question so answers are live.
-mountChatbot({ getData: ()=>({
-  pins: allPins(),
-  schedule: (typeof BASE_SCHEDULE!=='undefined'?BASE_SCHEDULE:{}),
-  demoSchedule: {},
-  crewLog: crewLog,
-  statusOverrides: statusOverrides,
-  daily: {entries:[]}
-}) });
+// Ardy's learning profile (name + question patterns), saved per-user in the background.
+let ARDY_PROFILE = { mem:{} };
+let ARDY_UID = null;
+mountChatbot({
+  getData: ()=>({
+    pins: allPins(),
+    schedule: (typeof BASE_SCHEDULE!=='undefined'?BASE_SCHEDULE:{}),
+    demoSchedule: {},
+    crewLog: crewLog,
+    statusOverrides: statusOverrides,
+    daily: {entries:[]}
+  }),
+  profile: ARDY_PROFILE,
+  onProfile: (p)=>{ ARDY_PROFILE.mem = p.mem; if(ARDY_UID) saveBotProfile(ARDY_UID, p.mem); }
+});
+// once we know who's logged in, pull their saved profile so Ardy remembers them
+window.__ardyInitProfile = async (uid)=>{
+  ARDY_UID = uid;
+  try{ const saved = await loadBotProfile(uid); if(saved && saved.mem) Object.assign(ARDY_PROFILE.mem, saved.mem); }catch(e){}
+};
 
 // ---- Day/night theme (persisted) ----
 (function initTheme(){
@@ -1210,7 +1222,8 @@ async function init(){
   requireAuth(async (user, role)=>{
     CURRENT_USER = user;
     USER_ROLE = role;
-    CAN_EDIT = (role === 'editor' || role === 'engineer');
+    if(window.__ardyInitProfile && user && user.uid) window.__ardyInitProfile(user.uid);
+    CAN_EDIT = (role === 'editor' || role === 'engineer' || role === 'supervisor');
     CAN_DELETE = (role === 'editor');
     document.getElementById('userChip').textContent = (user.isAnonymous ? 'Guest' : user.email) + ' · ' + role;
     (function(){var sl=document.getElementById('scribbleLink'); if(sl && !(role==='supervisor'||role==='editor'||role==='engineer')) sl.style.display='none';})();
